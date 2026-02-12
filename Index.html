@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameMaster Pro | Tienda Oficial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .chat-window { height: 350px; display: none; }
+        .visible { display: flex; }
+        .tab-active { border-bottom: 4px solid #3b82f6; color: #3b82f6; }
+        .product-card:hover { transform: translateY(-5px); }
+    </style>
+</head>
+<body class="bg-gray-950 text-white font-sans">
+
+    <header class="bg-gray-900 sticky top-0 z-50 shadow-2xl">
+        <div class="p-5 flex justify-between items-center max-w-7xl mx-auto">
+            <h1 class="text-3xl font-extrabold tracking-tighter text-blue-500">GAME<span class="text-white">MASTER</span></h1>
+            <div class="flex items-center gap-6">
+                <span id="token-status" class="hidden md:block text-[10px] bg-red-600 px-2 py-1 rounded-full uppercase font-bold">Token Inactivo</span>
+                <button onclick="toggleCarrito()" class="relative bg-blue-600 hover:bg-blue-700 p-2 rounded-lg transition">
+                    <span class="text-xl">🛒</span>
+                    <span id="cart-count" class="absolute -top-2 -right-2 bg-white text-blue-700 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                </button>
+            </div>
+        </div>
+        
+        <nav class="flex justify-center gap-8 bg-gray-800 text-sm font-bold uppercase tracking-widest p-3">
+            <button onclick="filtrar('consolas')" id="tab-consolas" class="tab-link tab-active py-2 transition">Consolas</button>
+            <button onclick="filtrar('juegos')" id="tab-juegos" class="tab-link py-2 transition">Videojuegos</button>
+            <button onclick="filtrar('accesorios')" id="tab-accesorios" class="tab-link py-2 transition">Accesorios</button>
+        </nav>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-8">
+        <div id="contenedor-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            </div>
+    </main>
+
+    <div id="carrito-sidebar" class="fixed right-0 top-0 h-full w-full md:w-96 bg-white text-gray-900 p-6 shadow-2xl transform translate-x-full transition-transform z-[60]">
+        <div class="flex justify-between items-center mb-6 border-b pb-4">
+            <h2 class="text-2xl font-black italic">MI CARRITO</h2>
+            <button onclick="toggleCarrito()" class="text-gray-400 hover:text-red-500 text-2xl">✕</button>
+        </div>
+        <div id="items-carrito" class="space-y-4 overflow-y-auto h-[60vh] pr-2">
+            </div>
+        <div class="absolute bottom-0 left-0 w-full p-6 bg-gray-50 border-t">
+            <div class="flex justify-between text-xl font-bold mb-4">
+                <span>Total:</span>
+                <span id="total-precio" class="text-blue-600">$0.00</span>
+            </div>
+            <button onclick="finalizarCompra()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 shadow-lg active:scale-95 transition">
+                CONFIRMAR PEDIDO
+            </button>
+        </div>
+    </div>
+
+    <div class="fixed bottom-5 left-5 z-50">
+        <div id="chat-box" class="chat-window flex-col bg-gray-900 border border-blue-500 text-white w-80 rounded-2xl shadow-2xl mb-4 p-4">
+            <div class="border-b border-blue-900 pb-2 mb-2 font-bold text-blue-400 flex justify-between">
+                <span>Soporte Gamer</span>
+                <button onclick="toggleChat()">_</button>
+            </div>
+            <div class="flex-1 overflow-y-auto text-sm space-y-3" id="chat-content">
+                <p class="bg-gray-800 p-3 rounded-tr-xl rounded-bl-xl border-l-4 border-blue-500">¡Hola! Soy tu asistente. Pregúntame por "ofertas" o "ayuda".</p>
+            </div>
+            <input type="text" id="chat-input" placeholder="Escribe aquí..." class="w-full bg-gray-800 border-none p-3 mt-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <button onclick="toggleChat()" class="bg-blue-600 p-4 rounded-full shadow-2xl hover:rotate-12 transition">
+            <span class="text-2xl">🤖</span>
+        </button>
+    </div>
+
+    <script>
+        // "Base de Datos" de Productos
+        const productos = [
+            // CONSOLAS
+            { id: 1, cat: 'consolas', nombre: 'PlayStation 5 Slim', precio: 499, img: '🎮' },
+            { id: 2, cat: 'consolas', nombre: 'Xbox Series X', precio: 489, img: '📦' },
+            { id: 3, cat: 'consolas', nombre: 'Nintendo Switch OLED', precio: 349, img: '📺' },
+            { id: 4, cat: 'consolas', nombre: 'Steam Deck 512GB', precio: 549, img: '📟' },
+            // JUEGOS
+            { id: 5, cat: 'juegos', nombre: 'Elden Ring', precio: 59.99, img: '💿' },
+            { id: 6, cat: 'juegos', nombre: 'Zelda: Tears of Kingdom', precio: 69.99, img: '🏹' },
+            { id: 7, cat: 'juegos', nombre: 'Spider-Man 2', precio: 69.99, img: '🕸️' },
+            { id: 8, cat: 'juegos', nombre: 'Halo Infinite', precio: 39.99, img: '🔫' },
+            // ACCESORIOS
+            { id: 9, cat: 'accesorios', nombre: 'Control DualSense', precio: 69, img: '🕹️' },
+            { id: 10, cat: 'accesorios', nombre: 'Audífonos Razer V3', precio: 99, img: '🎧' },
+            { id: 11, cat: 'accesorios', nombre: 'Silla Gamer RGB', precio: 199, img: '💺' },
+            { id: 12, cat: 'accesorios', nombre: 'Teclado Mecánico', precio: 129, img: '⌨️' }
+        ];
+
+        let carrito = [];
+        let tokenActivo = false;
+
+        // Simular validación de Token JWT
+        setTimeout(() => {
+            tokenActivo = true;
+            const status = document.getElementById('token-status');
+            status.innerText = "Token Verificado";
+            status.classList.replace('bg-red-600', 'bg-green-600');
+        }, 1500);
+
+        function filtrar(categoria) {
+            const container = document.getElementById('contenedor-productos');
+            container.innerHTML = '';
+            
+            // Actualizar Tabs
+            document.querySelectorAll('.tab-link').forEach(btn => btn.classList.remove('tab-active'));
+            document.getElementById(`tab-${categoria}`).classList.add('tab-active');
+
+            const filtrados = productos.filter(p => p.cat === categoria);
+            
+            filtrados.forEach(p => {
+                container.innerHTML += `
+                    <div class="product-card bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-lg transition-all">
+                        <div class="text-6xl mb-4 flex justify-center bg-gray-800 rounded-xl p-6">${p.img}</div>
+                        <h3 class="text-lg font-bold truncate">${p.nombre}</h3>
+                        <p class="text-blue-500 font-black text-2xl mt-1">$${p.precio}</p>
+                        <div class="mt-4 flex gap-2">
+                            <input type="number" id="qty-${p.id}" value="1" min="1" class="w-14 bg-gray-800 text-white rounded-md text-center border border-gray-700">
+                            <button onclick="agregarAlCarrito(${p.id})" class="flex-1 bg-gray-100 text-gray-900 font-bold py-2 rounded-md hover:bg-blue-500 hover:text-white transition">
+                                AGREGAR
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function agregarAlCarrito(id) {
+            const producto = productos.find(p => p.id === id);
+            const cant = parseInt(document.getElementById(`qty-${id}`).value);
+            
+            const existe = carrito.find(item => item.id === id);
+            if (existe) {
+                existe.cantidad += cant;
+            } else {
+                carrito.push({ ...producto, cantidad: cant });
+            }
+            actualizarCarritoUI();
+        }
+
+        function actualizarCarritoUI() {
+            const itemsCont = document.getElementById('items-carrito');
+            const totalText = document.getElementById('total-precio');
+            const cartCount = document.getElementById('cart-count');
+            
+            itemsCont.innerHTML = '';
+            let total = 0;
+            let count = 0;
+
+            carrito.forEach((item, index) => {
+                const subtotal = item.precio * item.cantidad;
+                total += subtotal;
+                count += item.cantidad;
+                itemsCont.innerHTML += `
+                    <div class="flex items-center gap-4 bg-gray-50 p-3 rounded-lg border">
+                        <span class="text-2xl">${item.img}</span>
+                        <div class="flex-1">
+                            <p class="font-bold text-sm leading-tight">${item.nombre}</p>
+                            <p class="text-xs text-gray-500">${item.cantidad} x $${item.precio}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-black text-blue-600">$${subtotal.toFixed(2)}</p>
+                            <button onclick="eliminar(${index})" class="text-[10px] text-red-500 uppercase font-bold mt-1">Quitar</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            totalText.innerText = `$${total.toFixed(2)}`;
+            cartCount.innerText = count;
+        }
+
+        function eliminar(idx) {
+            carrito.splice(idx, 1);
+            actualizarCarritoUI();
+        }
+
+        function finalizarCompra() {
+            if (!tokenActivo) return alert("⚠️ ERROR: No se detectó un Token de sesión válido.");
+            if (carrito.length === 0) return alert("Tu carrito está vacío.");
+            
+            alert("✅ ¡Transacción Exitosa!\nTu pedido está en camino.\nID de Operación: " + Math.random().toString(36).substr(2, 9).toUpperCase());
+            carrito = [];
+            actualizarCarritoUI();
+            toggleCarrito();
+        }
+
+        // Utilidades de Interfaz
+        function toggleCarrito() { document.getElementById('carrito-sidebar').classList.toggle('translate-x-full'); }
+        function toggleChat() { document.getElementById('chat-box').classList.toggle('visible'); }
+
+        // Lógica del Chatbot
+        document.getElementById('chat-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const msg = this.value;
+                const box = document.getElementById('chat-content');
+                box.innerHTML += `<p class="text-right text-xs"><strong>Tú:</strong> ${msg}</p>`;
+                
+                let r = "No tengo esa información, pero llama al 01-800-GAMER.";
+                if (msg.includes("oferta")) r = "¡Hoy tenemos 20% en accesorios!";
+                if (msg.includes("ayuda")) r = "Dime qué problema tienes con tu carrito.";
+                if (msg.includes("hola")) r = "¡Hola, leyenda! ¿Qué buscas hoy?";
+
+                setTimeout(() => {
+                    box.innerHTML += `<p class="bg-blue-900 p-3 rounded-tl-xl rounded-br-xl border-r-4 border-blue-400 text-xs"><strong>Bot:</strong> ${r}</p>`;
+                    box.scrollTop = box.scrollHeight;
+                }, 600);
+                this.value = '';
+            }
+        });
+
+        // Carga inicial
+        window.onload = () => filtrar('consolas');
+    </script>
+</body>
+</html>
