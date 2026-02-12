@@ -3,56 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GameMaster Pro | Tienda Oficial</title>
+    <title>GameMaster México | Tienda Oficial</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .chat-window { height: 400px; display: none; }
         .visible { display: flex; }
         .tab-active { border-bottom: 4px solid #3b82f6; color: #3b82f6; }
-        /* Ajuste para que las imágenes siempre se vean bien */
-        .img-container {
-            width: 100%;
-            height: 180px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #1f2937;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        .product-card img { 
-            max-width: 90%; 
-            max-height: 90%; 
-            object-fit: contain; 
-            transition: transform 0.3s;
-        }
-        .product-card:hover img { transform: scale(1.1); }
+        .product-card:hover { transform: translateY(-5px); }
+        #chat-content::-webkit-scrollbar { width: 4px; }
+        #chat-content::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
     </style>
 </head>
 <body class="bg-gray-950 text-white font-sans">
 
     <header class="bg-gray-900 sticky top-0 z-50 shadow-2xl">
         <div class="p-5 flex justify-between items-center max-w-7xl mx-auto">
-            <h1 class="text-3xl font-extrabold tracking-tighter text-blue-500">GAME<span class="text-white">MASTER</span></h1>
+            <h1 class="text-3xl font-extrabold tracking-tighter text-blue-500">GAME<span class="text-white">MASTER</span> <span class="text-xs bg-white text-black px-1 rounded">MX</span></h1>
             <div class="flex items-center gap-6">
                 <span id="token-status" class="hidden md:block text-[10px] bg-red-600 px-2 py-1 rounded-full uppercase font-bold tracking-widest">Token Inactivo</span>
                 <button onclick="toggleCarrito()" class="relative bg-blue-600 hover:bg-blue-700 p-2 rounded-lg transition">
                     <span class="text-xl">🛒</span>
-                    <span id="cart-count" class="absolute -top-2 -right-2 bg-white text-blue-700 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center text-blue-700">0</span>
+                    <span id="cart-count" class="absolute -top-2 -right-2 bg-white text-blue-700 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg">0</span>
                 </button>
             </div>
         </div>
         
         <nav class="flex justify-center gap-8 bg-gray-800 text-sm font-bold uppercase tracking-widest p-3">
-            <button onclick="filtrar('consolas')" id="tab-consolas" class="tab-link tab-active py-2 transition hover:text-blue-400">Consolas</button>
-            <button onclick="filtrar('juegos')" id="tab-juegos" class="tab-link py-2 transition hover:text-blue-400">Videojuegos</button>
-            <button onclick="filtrar('accesorios')" id="tab-accesorios" class="tab-link py-2 transition hover:text-blue-400">Accesorios</button>
+            <button onclick="filtrar('consolas')" id="tab-consolas" class="tab-link tab-active py-2">Consolas</button>
+            <button onclick="filtrar('juegos')" id="tab-juegos" class="tab-link py-2">Videojuegos</button>
+            <button onclick="filtrar('accesorios')" id="tab-accesorios" class="tab-link py-2">Accesorios</button>
         </nav>
     </header>
 
     <main class="max-w-7xl mx-auto p-8">
-        <div id="contenedor-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            </div>
+        <div id="contenedor-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
     </main>
 
     <div id="carrito-sidebar" class="fixed right-0 top-0 h-full w-full md:w-96 bg-white text-gray-900 p-6 shadow-2xl transform translate-x-full transition-transform z-[60]">
@@ -66,72 +50,81 @@
                 <span>Total:</span>
                 <span id="total-precio" class="text-blue-600">$0.00 MXN</span>
             </div>
-            <button onclick="finalizarCompra()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 shadow-lg active:scale-95 transition">CONFIRMAR PEDIDO</button>
+            <button onclick="finalizarCompra()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 shadow-lg active:scale-95 transition">
+                CONFIRMAR PEDIDO (MXN)
+            </button>
         </div>
     </div>
 
     <div class="fixed bottom-5 left-5 z-50">
         <div id="chat-box" class="chat-window flex-col bg-gray-900 border border-blue-500 text-white w-80 rounded-2xl shadow-2xl mb-4 p-4 overflow-hidden">
-            <div class="border-b border-blue-900 pb-2 mb-2 font-bold text-blue-400">🤖 Soporte Gamer</div>
+            <div class="border-b border-blue-900 pb-2 mb-2 font-bold text-blue-400 flex justify-between items-center">
+                <span>🤖 Soporte Gamer Pro</span>
+                <span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-1 rounded">En línea</span>
+            </div>
             <div class="flex-1 overflow-y-auto text-sm space-y-3 p-1" id="chat-content">
-                <p class="bg-gray-800 p-3 rounded-xl border-l-4 border-blue-500">¡Hola! Los precios están en MXN. Pregúntame sobre envíos o stock.</p>
+                <p class="bg-gray-800 p-3 rounded-xl border-l-4 border-blue-500">
+                    ¡Hola! Soy el asistente de GameMaster. <br><br>
+                    Puedes preguntarme sobre: <br>
+                    - <b>Envios</b> o entregas <br>
+                    - Métodos de <b>pago</b> <br>
+                    - <b>Garantia</b> de productos <br>
+                    - <b>Devoluciones</b> <br>
+                    - <b>Horario</b> de atención
+                </p>
             </div>
             <div class="mt-3 flex gap-2">
-                <input type="text" id="chat-input" placeholder="Escribe tu duda..." class="flex-1 bg-gray-800 border-none p-3 rounded-lg outline-none text-xs">
-                <button onclick="enviarMensaje()" class="bg-blue-600 px-3 rounded-lg text-white font-bold">➜</button>
+                <input type="text" id="chat-input" placeholder="Escribe tu duda..." class="flex-1 bg-gray-800 border-none p-3 rounded-lg outline-none text-xs focus:ring-1 focus:ring-blue-500">
+                <button onclick="enviarMensaje()" class="bg-blue-600 px-3 rounded-lg">➜</button>
             </div>
         </div>
-        <button onclick="toggleChat()" class="bg-blue-600 p-4 rounded-full shadow-2xl hover:scale-110 transition active:scale-90">💬</button>
+        <button onclick="toggleChat()" class="bg-blue-600 p-4 rounded-full shadow-2xl hover:scale-110 transition-transform active:scale-90">
+            <span class="text-2xl">💬</span>
+        </button>
     </div>
 
     <script>
-        // Imágenes de alta disponibilidad que GitHub SIEMPRE acepta
         const productos = [
-            { id: 1, cat: 'consolas', nombre: 'PlayStation 5 Slim', precio: 10499, imagenURL: 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=400&q=80' },
-            { id: 2, cat: 'consolas', nombre: 'Xbox Series X', precio: 9899, imagenURL: 'https://images.unsplash.com/photo-1621259182978-f09e5e2ca935?w=400&q=80' },
-            { id: 3, cat: 'consolas', nombre: 'Nintendo Switch OLED', precio: 6299, imagenURL: 'https://images.unsplash.com/photo-1578303512597-81e6cc155b3e?w=400&q=80' },
-            { id: 4, cat: 'consolas', nombre: 'Console Retro Pro', precio: 2500, imagenURL: 'https://images.unsplash.com/photo-1526509867162-5b0c0d1b4b33?w=400&q=80' },
-            
-            { id: 5, cat: 'juegos', nombre: 'Elden Ring', precio: 1299, imagenURL: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&q=80' },
-            { id: 6, cat: 'juegos', nombre: 'Zelda: TotK', precio: 1399, imagenURL: 'https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?w=400&q=80' },
-            
-            { id: 9, cat: 'accesorios', nombre: 'Control Pro Gamer', precio: 1499, imagenURL: 'https://images.unsplash.com/photo-1592840331052-16e15c2c6f95?w=400&q=80' },
-            { id: 10, cat: 'accesorios', nombre: 'Headset Gamer 7.1', precio: 2100, imagenURL: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80' }
+            { id: 1, cat: 'consolas', nombre: 'PlayStation 5 Slim', precio: 10499, img: '🎮' },
+            { id: 2, cat: 'consolas', nombre: 'Xbox Series X', precio: 9899, img: '📦' },
+            { id: 3, cat: 'consolas', nombre: 'Nintendo Switch OLED', precio: 6299, img: '📺' },
+            { id: 4, cat: 'consolas', nombre: 'Steam Deck 512GB', precio: 11500, img: '📟' },
+            { id: 5, cat: 'juegos', nombre: 'Elden Ring', precio: 1299, img: '💿' },
+            { id: 6, cat: 'juegos', nombre: 'Zelda: Tears of Kingdom', precio: 1399, img: '🏹' },
+            { id: 7, cat: 'juegos', nombre: 'Spider-Man 2', precio: 1299, img: '🕸️' },
+            { id: 8, cat: 'juegos', nombre: 'Halo Infinite', precio: 899, img: '🔫' },
+            { id: 9, cat: 'accesorios', nombre: 'Control DualSense', precio: 1499, img: '🕹️' },
+            { id: 10, cat: 'accesorios', nombre: 'Audífonos Razer V3', precio: 2100, img: '🎧' },
+            { id: 11, cat: 'accesorios', nombre: 'Silla Gamer RGB', precio: 4500, img: '💺' },
+            { id: 12, cat: 'accesorios', nombre: 'Teclado Mecánico', precio: 2600, img: '⌨️' }
         ];
 
         let carrito = [];
         let tokenActivo = false;
 
-        // Simulación Token
+        // Simulación de Token de Seguridad
         setTimeout(() => {
             tokenActivo = true;
             const status = document.getElementById('token-status');
-            if(status) {
-                status.innerText = "Token Verificado ✅";
-                status.classList.replace('bg-red-600', 'bg-green-600');
-            }
-        }, 1500);
+            status.innerText = "Token Verificado ✅";
+            status.classList.replace('bg-red-600', 'bg-green-600');
+        }, 2000);
 
         function filtrar(categoria) {
             const container = document.getElementById('contenedor-productos');
-            if(!container) return;
             container.innerHTML = '';
-            
             document.querySelectorAll('.tab-link').forEach(btn => btn.classList.remove('tab-active'));
-            const activeTab = document.getElementById(`tab-${categoria}`);
-            if(activeTab) activeTab.classList.add('tab-active');
+            document.getElementById(`tab-${categoria}`).classList.add('tab-active');
 
             productos.filter(p => p.cat === categoria).forEach(p => {
                 container.innerHTML += `
-                    <div class="product-card bg-gray-900 border border-gray-800 p-5 rounded-2xl shadow-lg flex flex-col">
-                        <div class="img-container mb-4">
-                            <img src="${p.imagenURL}" alt="${p.nombre}" onerror="this.src='https://via.placeholder.com/200?text=GAME'">
-                        </div>
-                        <h3 class="text-sm font-bold truncate mb-1">${p.nombre}</h3>
-                        <p class="text-blue-500 font-black text-xl">$${p.precio.toLocaleString('es-MX')}</p>
+                    <div class="product-card bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-lg transition-all">
+                        <div class="text-6xl mb-4 flex justify-center bg-gray-800 rounded-xl p-6">${p.img}</div>
+                        <h3 class="text-lg font-bold truncate">${p.nombre}</h3>
+                        <p class="text-blue-500 font-black text-2xl mt-1">$${p.precio.toLocaleString('es-MX')}</p>
                         <div class="mt-4 flex gap-2">
-                            <input type="number" id="qty-${p.id}" value="1" min="1" class="w-12 bg-gray-800 text-white rounded text-center text-xs border border-gray-700 outline-none">
-                            <button onclick="agregarAlCarrito(${p.id})" class="flex-1 bg-white text-gray-900 font-bold py-2 rounded-lg hover:bg-blue-500 hover:text-white transition text-xs uppercase">Añadir</button>
+                            <input type="number" id="qty-${p.id}" value="1" min="1" class="w-14 bg-gray-800 text-white rounded-md text-center border border-gray-700">
+                            <button onclick="agregarAlCarrito(${p.id})" class="flex-1 bg-gray-100 text-gray-900 font-bold py-2 rounded-md hover:bg-blue-500 hover:text-white transition">AGREGAR</button>
                         </div>
                     </div>
                 `;
@@ -140,12 +133,10 @@
 
         function agregarAlCarrito(id) {
             const producto = productos.find(p => p.id === id);
-            const qtyInput = document.getElementById(`qty-${id}`);
-            const cant = qtyInput ? parseInt(qtyInput.value) : 1;
+            const cant = parseInt(document.getElementById(`qty-${id}`).value);
             const existe = carrito.find(item => item.id === id);
             if (existe) { existe.cantidad += cant; } else { carrito.push({ ...producto, cantidad: cant }); }
             actualizarCarritoUI();
-            alert(`Añadido: ${producto.nombre} (${cant} pz)`);
         }
 
         function actualizarCarritoUI() {
@@ -158,15 +149,15 @@
                 const subtotal = item.precio * item.cantidad;
                 total += subtotal; count += item.cantidad;
                 itemsCont.innerHTML += `
-                    <div class="flex items-center gap-3 bg-gray-50 p-2 rounded-lg border border-gray-200">
-                        <img src="${item.imagenURL}" class="w-10 h-10 rounded object-cover">
-                        <div class="flex-1 text-[10px]">
+                    <div class="flex items-center gap-4 bg-gray-50 p-3 rounded-lg border">
+                        <span class="text-2xl">${item.img}</span>
+                        <div class="flex-1 text-xs">
                             <p class="font-bold">${item.nombre}</p>
-                            <p>${item.cantidad} x $${item.precio}</p>
+                            <p>${item.cantidad} x $${item.precio.toLocaleString('es-MX')}</p>
                         </div>
                         <div class="text-right">
-                            <p class="font-bold text-blue-600 text-xs">$${subtotal}</p>
-                            <button onclick="eliminar(${index})" class="text-[8px] text-red-500 font-bold uppercase">Quitar</button>
+                            <p class="font-black text-blue-600">$${subtotal.toLocaleString('es-MX')}</p>
+                            <button onclick="eliminar(${index})" class="text-[10px] text-red-500 font-bold">Quitar</button>
                         </div>
                     </div>
                 `;
@@ -179,27 +170,50 @@
         function toggleCarrito() { document.getElementById('carrito-sidebar').classList.toggle('translate-x-full'); }
         function toggleChat() { document.getElementById('chat-box').classList.toggle('visible'); }
 
+        // Lógica Avanzada del Chatbot
         function enviarMensaje() {
             const input = document.getElementById('chat-input');
-            if(!input.value.trim()) return;
+            const msg = input.value.toLowerCase().trim();
+            if (msg === "") return;
+
             const box = document.getElementById('chat-content');
-            box.innerHTML += `<p class="text-right text-xs italic"><strong>Tú:</strong> ${input.value}</p>`;
-            let r = "Prueba con 'envio', 'pago' o 'stock'.";
-            const m = input.value.toLowerCase();
-            if (m.includes("envio")) r = "Enviamos a todo México por FedEx.";
-            if (m.includes("pago")) r = "Aceptamos tarjetas de crédito y OXXO.";
+            box.innerHTML += `<p class="text-right text-xs bg-blue-600/20 p-2 rounded-lg ml-8 italic"><strong>Tú:</strong> ${input.value}</p>`;
             
+            let r = "Lo siento, no entiendo esa pregunta. Prueba con 'pago', 'envio' o 'garantia'.";
+            
+            if (msg.includes("envio") || msg.includes("entreg")) {
+                r = "🚚 <b>Envíos:</b> Entregamos a todo México vía FedEx o DHL. El tiempo estimado es de 2 a 5 días hábiles.";
+            } else if (msg.includes("pago") || msg.includes("tarjeta")) {
+                r = "💳 <b>Pagos:</b> Aceptamos Visa, Mastercard, American Express y transferencias SPEI.";
+            } else if (msg.includes("garantia") || msg.includes("fall")) {
+                r = "🛡️ <b>Garantía:</b> Todas nuestras consolas tienen 1 año de garantía directamente con el fabricante.";
+            } else if (msg.includes("devolu") || msg.includes("regres")) {
+                r = "🔄 <b>Devoluciones:</b> Tienes 30 días para devolver juegos sellados. Si el producto está abierto, solo aplica por falla técnica.";
+            } else if (msg.includes("horario") || msg.includes("abiert")) {
+                r = "⏰ <b>Horarios:</b> Nuestra tienda online opera 24/7. El soporte humano está de Lunes a Viernes de 9am a 6pm.";
+            } else if (msg.includes("hola") || msg.includes("buen")) {
+                r = "¡Hola gamer! 🎮 ¿En qué puedo ayudarte hoy?";
+            } else if (msg.includes("ps5") || msg.includes("playstation")) {
+                r = "¡El PS5 Slim está en oferta! Incluye un control DualSense y un juego digital de regalo.";
+            }
+
             setTimeout(() => {
-                box.innerHTML += `<p class="bg-blue-900/30 p-2 rounded-lg text-xs"><strong>Bot:</strong> ${r}</p>`;
+                box.innerHTML += `<p class="bg-blue-900/40 p-3 rounded-xl text-xs border border-blue-800"><strong>Bot:</strong> ${r}</p>`;
                 box.scrollTop = box.scrollHeight;
-            }, 500);
+            }, 600);
+
             input.value = '';
         }
 
+        // Permitir enviar con la tecla Enter
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') enviarMensaje();
+        });
+
         function finalizarCompra() {
-            if (!tokenActivo) return alert("Error: Token no válido.");
-            if (carrito.length === 0) return alert("Carrito vacío.");
-            alert("✅ Compra Exitosa. ¡Gracias por elegir GameMaster!");
+            if (!tokenActivo) return alert("❌ Error de Seguridad: Token no detectado.");
+            if (carrito.length === 0) return alert("Tu carrito está vacío.");
+            alert("✅ ¡Pedido Recibido! Total: " + document.getElementById('total-precio').innerText + "\n\nSe ha generado tu ticket de compra.");
             carrito = []; actualizarCarritoUI(); toggleCarrito();
         }
 
