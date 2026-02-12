@@ -9,8 +9,10 @@
         .chat-window { height: 400px; display: none; }
         .visible { display: flex; }
         .tab-active { border-bottom: 4px solid #3b82f6; color: #3b82f6; }
-        .product-card img { transition: transform 0.3s; object-fit: contain; height: 160px; width: 100%; }
+        .product-card img { transition: transform 0.3s; object-fit: contain; height: 160px; width: 100%; padding: 10px; }
         .product-card:hover img { transform: scale(1.1); }
+        #chat-content::-webkit-scrollbar { width: 4px; }
+        #chat-content::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
     </style>
 </head>
 <body class="bg-gray-950 text-white font-sans">
@@ -22,7 +24,7 @@
                 <span id="token-status" class="hidden md:block text-[10px] bg-red-600 px-2 py-1 rounded-full uppercase font-bold tracking-widest">Token Inactivo</span>
                 <button onclick="toggleCarrito()" class="relative bg-blue-600 hover:bg-blue-700 p-2 rounded-lg transition">
                     <span class="text-xl">🛒</span>
-                    <span id="cart-count" class="absolute -top-2 -right-2 bg-white text-blue-700 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                    <span id="cart-count" class="absolute -top-2 -right-2 bg-white text-blue-700 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg">0</span>
                 </button>
             </div>
         </div>
@@ -35,7 +37,8 @@
     </header>
 
     <main class="max-w-7xl mx-auto p-8">
-        <div id="contenedor-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+        <div id="contenedor-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            </div>
     </main>
 
     <div id="carrito-sidebar" class="fixed right-0 top-0 h-full w-full md:w-96 bg-white text-gray-900 p-6 shadow-2xl transform translate-x-full transition-transform z-[60]">
@@ -55,11 +58,9 @@
 
     <div class="fixed bottom-5 left-5 z-50">
         <div id="chat-box" class="chat-window flex-col bg-gray-900 border border-blue-500 text-white w-80 rounded-2xl shadow-2xl mb-4 p-4 overflow-hidden">
-            <div class="border-b border-blue-900 pb-2 mb-2 font-bold text-blue-400 flex justify-between items-center">
-                <span>🤖 Soporte Gamer</span>
-            </div>
+            <div class="border-b border-blue-900 pb-2 mb-2 font-bold text-blue-400">🤖 Soporte Gamer</div>
             <div class="flex-1 overflow-y-auto text-sm space-y-3 p-1" id="chat-content">
-                <p class="bg-gray-800 p-3 rounded-xl border-l-4 border-blue-500">¡Hola! ¿En qué puedo ayudarte hoy?</p>
+                <p class="bg-gray-800 p-3 rounded-xl border-l-4 border-blue-500">¡Hola! Soy tu asistente. Pregúntame sobre envíos o pagos.</p>
             </div>
             <div class="mt-3 flex gap-2">
                 <input type="text" id="chat-input" placeholder="Escribe tu duda..." class="flex-1 bg-gray-800 border-none p-3 rounded-lg outline-none text-xs">
@@ -70,84 +71,45 @@
     </div>
 
     <script>
-        // ============================================================
-        // MODIFICA LOS LINKS ENTRE LAS COMILLAS PARA TUS IMÁGENES
-        // ============================================================
         const productos = [
-            // --- CONSOLAS ---
-            { 
-                id: 1, cat: 'consolas', nombre: 'PlayStation 5 Slim', precio: 10499, 
-                imagenURL: 'https://i.imgur.com/8YvV09X.png' 
-            },
-            { 
-                id: 2, cat: 'consolas', nombre: 'Xbox Series X', precio: 9899, 
-                imagenURL: 'https://i.imgur.com/u7fLdAt.png' 
-            },
-            { 
-                id: 3, cat: 'consolas', nombre: 'Nintendo Switch OLED', precio: 6299, 
-                imagenURL: 'https://i.imgur.com/S5XfB5V.png' 
-            },
-            { 
-                id: 4, cat: 'consolas', nombre: 'Steam Deck 512GB', precio: 11500, 
-                imagenURL: 'https://i.imgur.com/WvXG8pX.png' 
-            },
-
-            // --- VIDEOJUEGOS ---
-            { 
-                id: 5, cat: 'juegos', nombre: 'Elden Ring', precio: 1299, 
-                imagenURL: 'https://i.imgur.com/rN9Fp8r.jpg' 
-            },
-            { 
-                id: 6, cat: 'juegos', nombre: 'Zelda: Tears of Kingdom', precio: 1399, 
-                imagenURL: 'https://i.imgur.com/97yC8f0.jpg' 
-            },
-            { 
-                id: 7, cat: 'juegos', nombre: 'Spider-Man 2', precio: 1299, 
-                imagenURL: 'https://i.imgur.com/8M0W1Wz.jpg' 
-            },
-            { 
-                id: 8, cat: 'juegos', nombre: 'Halo Infinite', precio: 899, 
-                imagenURL: 'https://i.imgur.com/W2uR3uW.jpg' 
-            },
-
-            // --- ACCESORIOS ---
-            { 
-                id: 9, cat: 'accesorios', nombre: 'Control DualSense', precio: 1499, 
-                imagenURL: 'https://i.imgur.com/4Ssh6X8.png' 
-            },
-            { 
-                id: 10, cat: 'accesorios', nombre: 'Audífonos Razer V3', precio: 2100, 
-                imagenURL: 'https://i.imgur.com/zXn9f79.png' 
-            },
-            { 
-                id: 11, cat: 'accesorios', nombre: 'Silla Gamer RGB', precio: 4500, 
-                imagenURL: 'https://i.imgur.com/pYI8S7H.png' 
-            },
-            { 
-                id: 12, cat: 'accesorios', nombre: 'Teclado Mecánico', precio: 2600, 
-                imagenURL: 'https://i.imgur.com/hYyR89S.png' 
-            }
+            { id: 1, cat: 'consolas', nombre: 'PlayStation 5 Slim', precio: 10499, imagenURL: 'https://i.imgur.com/8YvV09X.png' },
+            { id: 2, cat: 'consolas', nombre: 'Xbox Series X', precio: 9899, imagenURL: 'https://i.imgur.com/u7fLdAt.png' },
+            { id: 3, cat: 'consolas', nombre: 'Nintendo Switch OLED', precio: 6299, imagenURL: 'https://i.imgur.com/S5XfB5V.png' },
+            { id: 4, cat: 'consolas', nombre: 'Steam Deck 512GB', precio: 11500, imagenURL: 'https://i.imgur.com/WvXG8pX.png' },
+            { id: 5, cat: 'juegos', nombre: 'Elden Ring', precio: 1299, imagenURL: 'https://i.imgur.com/rN9Fp8r.jpg' },
+            { id: 6, cat: 'juegos', nombre: 'Zelda: Tears of Kingdom', precio: 1399, imagenURL: 'https://i.imgur.com/97yC8f0.jpg' },
+            { id: 7, cat: 'juegos', nombre: 'Spider-Man 2', precio: 1299, imagenURL: 'https://i.imgur.com/8M0W1Wz.jpg' },
+            { id: 8, cat: 'juegos', nombre: 'Halo Infinite', precio: 899, imagenURL: 'https://i.imgur.com/W2uR3uW.jpg' },
+            { id: 9, cat: 'accesorios', nombre: 'Control DualSense', precio: 1499, imagenURL: 'https://i.imgur.com/4Ssh6X8.png' },
+            { id: 10, cat: 'accesorios', nombre: 'Audífonos Razer V3', precio: 2100, imagenURL: 'https://i.imgur.com/zXn9f79.png' },
+            { id: 11, cat: 'accesorios', nombre: 'Silla Gamer RGB', precio: 4500, imagenURL: 'https://i.imgur.com/pYI8S7H.png' },
+            { id: 12, cat: 'accesorios', nombre: 'Teclado Mecánico', precio: 2600, imagenURL: 'https://i.imgur.com/hYyR89S.png' }
         ];
-        
+
         let carrito = [];
         let tokenActivo = false;
 
         setTimeout(() => {
             tokenActivo = true;
-            document.getElementById('token-status').innerText = "Token Verificado ✅";
-            document.getElementById('token-status').classList.replace('bg-red-600', 'bg-green-600');
+            const status = document.getElementById('token-status');
+            if(status){
+                status.innerText = "Token Verificado ✅";
+                status.classList.replace('bg-red-600', 'bg-green-600');
+            }
         }, 1500);
 
         function filtrar(categoria) {
             const container = document.getElementById('contenedor-productos');
+            if(!container) return;
             container.innerHTML = '';
+            
             document.querySelectorAll('.tab-link').forEach(btn => btn.classList.remove('tab-active'));
             document.getElementById(`tab-${categoria}`).classList.add('tab-active');
 
             productos.filter(p => p.cat === categoria).forEach(p => {
                 container.innerHTML += `
                     <div class="product-card bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-lg transition-all flex flex-col items-center">
-                        <div class="overflow-hidden rounded-xl bg-gray-800 mb-4 w-full">
+                        <div class="overflow-hidden rounded-xl bg-gray-800 mb-4 w-full flex justify-center">
                             <img src="${p.imagenURL}" alt="${p.nombre}">
                         </div>
                         <h3 class="text-md font-bold truncate w-full text-center">${p.nombre}</h3>
@@ -163,7 +125,8 @@
 
         function agregarAlCarrito(id) {
             const producto = productos.find(p => p.id === id);
-            const cant = parseInt(document.getElementById(`qty-${id}`).value);
+            const inputQty = document.getElementById(`qty-${id}`);
+            const cant = inputQty ? parseInt(inputQty.value) : 1;
             const existe = carrito.find(item => item.id === id);
             if (existe) { existe.cantidad += cant; } else { carrito.push({ ...producto, cantidad: cant }); }
             actualizarCarritoUI();
@@ -182,12 +145,12 @@
                     <div class="flex items-center gap-4 bg-gray-50 p-2 rounded-lg border border-gray-200">
                         <img src="${item.imagenURL}" class="w-12 h-12 rounded object-cover">
                         <div class="flex-1 text-[10px]">
-                            <p class="font-bold">${item.nombre}</p>
+                            <p class="font-bold uppercase">${item.nombre}</p>
                             <p>${item.cantidad} x $${item.precio.toLocaleString('es-MX')}</p>
                         </div>
                         <div class="text-right">
                             <p class="font-black text-blue-600 text-xs">$${subtotal.toLocaleString('es-MX')}</p>
-                            <button onclick="eliminar(${index})" class="text-[9px] text-red-500 font-bold">Quitar</button>
+                            <button onclick="eliminar(${index})" class="text-[9px] text-red-500 font-bold uppercase">Quitar</button>
                         </div>
                     </div>
                 `;
@@ -222,12 +185,11 @@
             if (!tokenActivo) return alert("Error de Seguridad: Token no detectado.");
             if (carrito.length === 0) return alert("Carrito vacío.");
             alert("✅ ¡Compra realizada con éxito! Total: " + document.getElementById('total-precio').innerText);
-            carrito = []; actualizarCarritoUI();
+            carrito = []; actualizarCarritoUI(); toggleCarrito();
         }
 
-        window.onload = () => filtrar('consolas');
+        // Carga inicial de productos
+        window.onload = () => { filtrar('consolas'); };
     </script>
 </body>
 </html>
-
-
