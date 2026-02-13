@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GameMaster México | Tienda Oficial</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         .chat-window { height: 400px; display: none; }
         .visible { display: flex; }
@@ -239,18 +240,39 @@ function generarTokenPago() {
     return token;
 }
 
+let pagoValidadoQR = false; // Estado de seguridad adicional
+
 async function finalizarCompra() {
     if (!tokenActivo) return alert("❌ Error: Token de Sesión no verificado.");
     if (carrito.length === 0) return alert("Tu carrito está vacío.");
 
+    // Si el QR no ha sido validado, lo generamos y detenemos el proceso
+    if (!pagoValidadoQR) {
+        const qrDiv = document.getElementById('qr-container');
+        qrDiv.classList.remove('hidden');
+        
+        // Limpiamos QR anterior si existe y generamos uno nuevo con el Token de Pago
+        document.getElementById('qrcode').innerHTML = "";
+        const tempToken = generarTokenPago();
+        new QRCode(document.getElementById("qrcode"), {
+            text: tempToken,
+            width: 128,
+            height: 128
+        });
+        
+        alert("⚠️ VALIDACIÓN REQUERIDA: Escanea el código QR para autorizar la transacción con tu app bancaria.");
+        return;
+    }
+
+    // Si ya está validado, procedemos con el cierre
     const btn = document.querySelector('button[onclick="finalizarCompra()"]');
-    btn.innerText = "VALIDANDO PAGO CON API...";
+    btn.innerText = "PROCESANDO TRANSACCIÓN...";
     btn.disabled = true;
 
     setTimeout(() => {
-        const payToken = generarTokenPago();
-        alert(`✅ PAGO PROCESADO CON ÉXITO\n\nID Transacción: ${payToken}\nGracias por tu compra en GameMaster MX.`);
-        
+        alert(`✅ COMPRA FINALIZADA\n\nEl código QR ha sido validado por el banco.\nTu pedido está en camino.`);
+        pagoValidadoQR = false; // Reset para la siguiente compra
+        document.getElementById('qr-container').classList.add('hidden');
         carrito = [];
         actualizarCarritoUI();
         toggleCarrito();
@@ -259,10 +281,20 @@ async function finalizarCompra() {
     }, 2000);
 }
 
+// Función que simula la respuesta de la API del banco al escanear
+function validarQR() {
+    pagoValidadoQR = true;
+    alert("📱 ¡Escaneo Exitoso! El banco ha autorizado el movimiento. Ahora puedes confirmar tu pedido.");
+    const qrDiv = document.getElementById('qr-container');
+    qrDiv.innerHTML = "<p class='text-green-600 font-bold py-4'>✅ PAGO AUTORIZADO POR EL BANCO</p>";
+}, 2000);
+}
+
         window.onload = () => filtrar('consolas');
     </script>
 </body>
 </html>
+
 
 
 
