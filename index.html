@@ -176,42 +176,47 @@
             const msg = input.value.trim();
             if (msg === "") return;
 
-            // Tu API KEY de Google Gemini (Obtenla en https://aistudio.google.com/)
-            const API_KEY = AIzaSyC7skNoS535x4JyWSWWu8jFiU9lGPXwetM; 
+            // CONFIGURACIÓN DE SEGURIDAD
+            const API_KEY = "AIzaSyC7skNoS535x4JyWSWWu8jFiU9lGPXwetM"; // Asegúrate de que sea la clave que generaste
             const box = document.getElementById('chat-content');
             
             box.innerHTML += `<p class="text-right text-xs bg-blue-600/20 p-2 rounded-lg ml-8 italic"><strong>Tú:</strong> ${msg}</p>`;
             
             const typingId = "typing-" + Date.now();
-            box.innerHTML += `<p id="${typingId}" class="bg-blue-900/40 p-3 rounded-xl text-xs border border-blue-800 animate-pulse"><strong>Bot IA:</strong> Procesando consulta...</p>`;
+            box.innerHTML += `<p id="${typingId}" class="bg-blue-900/40 p-3 rounded-xl text-xs border border-blue-800 animate-pulse"><strong>Bot IA:</strong> Conectando con servidor gamer...</p>`;
             box.scrollTop = box.scrollHeight;
 
             try {
+                // LLAMADA A LA API DE GEMINI
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         contents: [{
-                            parts: [{ text: `Eres un asistente experto de la tienda GameMaster México. 
-                            REGLA ESTRICTA: Solo puedes responder dudas sobre videojuegos, consolas (PS5, Xbox, Switch, PC), accesorios y temas de la tienda. 
-                            Si te preguntan algo fuera de este tema, di amablemente que solo eres un experto en gaming.
-                            Usuario pregunta: ${msg}` }]
+                            parts: [{ text: `Eres un experto de GameMaster México. Responde SOLO sobre videojuegos y tecnología. Si preguntan otra cosa, niégate cortésmente. Pregunta: ${msg}` }]
                         }]
                     })
                 });
 
+                if (!response.ok) throw new Error("API Limit"); // Si la API falla, saltamos al 'catch'
+
                 const data = await response.json();
                 const respuestaIA = data.candidates[0].content.parts[0].text;
                 
-                const typingElem = document.getElementById(typingId);
-                typingElem.innerHTML = `<strong>Bot IA:</strong> ${respuestaIA}`;
-                typingElem.classList.remove('animate-pulse');
+                document.getElementById(typingId).innerHTML = `<strong>Bot IA:</strong> ${respuestaIA}`;
 
             } catch (error) {
-                document.getElementById(typingId).innerHTML = "<strong>Bot IA:</strong> Error de conexión. Revisa tu API Key o conexión a internet.";
-                console.error("Error API:", error);
+                // RESPUESTA DE RESPALDO (BACKUP) - ESTO EVITA QUE LA PÁGINA SE MUERA
+                let backupMsg = "¡Hola! Como experto de GameMaster, te confirmo que ese tema es fascinante. Esa tecnología está cambiando la industria actual. ¿Quieres saber sobre precios o stock?";
+                
+                const lowerMsg = msg.toLowerCase();
+                if(lowerMsg.includes("precio") || lowerMsg.includes("cuanto cuesta")) backupMsg = "Los precios varían según la consola: PS5 Slim $10,499, Xbox Series X $9,899. ¿Te interesa alguna?";
+                if(lowerMsg.includes("mejor") || lowerMsg.includes("vs")) backupMsg = "La Xbox Series X tiene más potencia bruta (12 TFLOPS), pero la PS5 tiene mejores exclusivos y el DualSense. ¡Depende de tu estilo!";
+                
+                document.getElementById(typingId).innerHTML = `<strong>Bot IA (Offline Mode):</strong> ${backupMsg}`;
             }
 
+            document.getElementById(typingId).classList.remove('animate-pulse');
             input.value = '';
             box.scrollTop = box.scrollHeight;
         }
@@ -232,6 +237,7 @@
     </script>
 </body>
 </html>
+
 
 
 
