@@ -21,7 +21,7 @@
         <div class="p-5 flex justify-between items-center max-w-7xl mx-auto">
             <h1 class="text-3xl font-extrabold tracking-tighter text-blue-500">GAME<span class="text-white">MASTER</span> <span class="text-xs bg-white text-black px-1 rounded">MX</span></h1>
             <div class="flex items-center gap-6">
-                <span id="token-status" class="hidden md:block text-[10px] bg-red-600 px-2 py-1 rounded-full uppercase font-bold tracking-widest">Token Inactivo</span>
+                <span id="token-status" class="hidden md:block text-[10px] bg-red-600 px-2 py-1 rounded-full uppercase font-bold tracking-widest">Verificando Sesión...</span>
                 <button onclick="toggleCarrito()" class="relative bg-blue-600 hover:bg-blue-700 p-2 rounded-lg transition">
                     <span class="text-xl">🛒</span>
                     <span id="cart-count" class="absolute -top-2 -right-2 bg-white text-blue-700 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg">0</span>
@@ -45,13 +45,23 @@
             <h2 class="text-2xl font-black italic">MI CARRITO</h2>
             <button onclick="toggleCarrito()" class="text-gray-400 hover:text-red-500 text-2xl">✕</button>
         </div>
-        <div id="items-carrito" class="space-y-4 overflow-y-auto h-[60vh] pr-2"></div>
+        
+        <div id="items-carrito" class="space-y-4 overflow-y-auto h-[45vh] pr-2"></div>
+
         <div class="absolute bottom-0 left-0 w-full p-6 bg-gray-50 border-t">
+            <div id="qr-container" class="hidden bg-white p-4 rounded-lg mb-4 text-center border-2 border-dashed border-blue-400">
+                <p class="text-[10px] font-bold text-blue-600 mb-2 uppercase">Escanea para autorizar pago</p>
+                <div id="qrcode" class="flex justify-center mb-2"></div>
+                <button onclick="validarQR()" class="text-xs bg-green-500 text-white px-4 py-1 rounded-full hover:bg-green-600 animate-bounce">
+                    Simular Escaneo ✅
+                </button>
+            </div>
+
             <div class="flex justify-between text-xl font-bold mb-4">
                 <span>Total:</span>
                 <span id="total-precio" class="text-blue-600">$0.00 MXN</span>
             </div>
-            <button onclick="finalizarCompra()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 shadow-lg active:scale-95 transition">
+            <button id="btn-finalizar" onclick="finalizarCompra()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 shadow-lg active:scale-95 transition">
                 CONFIRMAR PEDIDO (MXN)
             </button>
         </div>
@@ -60,24 +70,18 @@
     <div class="fixed bottom-5 left-5 z-50">
         <div id="chat-box" class="chat-window flex-col bg-gray-900 border border-blue-500 text-white w-80 rounded-2xl shadow-2xl mb-4 p-4 overflow-hidden">
             <div class="border-b border-blue-900 pb-2 mb-2 font-bold text-blue-400 flex justify-between items-center">
-                <span>🤖 Soporte Gamer Pro</span>
-                <span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-1 rounded">En línea</span>
+                <span>🤖 IA GameMaster Pro</span>
+                <span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Online</span>
             </div>
             <div class="flex-1 overflow-y-auto text-sm space-y-3 p-1" id="chat-content">
                 <p class="bg-gray-800 p-3 rounded-xl border-l-4 border-blue-500">
-                    ¡Hola! Soy el asistente de GameMaster. <br><br>
-                    Puedes preguntarme sobre: <br>
-                    - <b>Envios</b> o entregas <br>
-                    - Métodos de <b>pago</b> <br>
-                    - <b>Garantia</b> de productos <br>
-                    - <b>Devoluciones</b> <br>
-                    - <b>Horario</b> de atención
+                    ¡Hola! Soy la IA de GameMaster. Pregúntame lo que quieras sobre consolas o videojuegos.
                 </p>
             </div>
             <div class="mt-3 flex gap-2">
-    <input type="text" id="chat-input" placeholder="Escribe tu duda..." class="flex-1 bg-gray-800 border-none p-3 rounded-lg outline-none text-xs focus:ring-1 focus:ring-blue-500 text-white">
-    <button onclick="enviarMensaje()" class="bg-blue-600 px-3 rounded-lg text-white hover:bg-blue-700">➜</button>
-</div>
+                <input type="text" id="chat-input" placeholder="Escribe tu duda..." class="flex-1 bg-gray-800 border-none p-3 rounded-lg outline-none text-xs focus:ring-1 focus:ring-blue-500 text-white">
+                <button onclick="enviarMensaje()" class="bg-blue-600 px-3 rounded-lg">➜</button>
+            </div>
         </div>
         <button onclick="toggleChat()" class="bg-blue-600 p-4 rounded-full shadow-2xl hover:scale-110 transition-transform active:scale-90">
             <span class="text-2xl">💬</span>
@@ -85,6 +89,7 @@
     </div>
 
     <script>
+        // --- BASE DE DATOS ---
         const productos = [
             { id: 1, cat: 'consolas', nombre: 'PlayStation 5 Slim', precio: 10499, img: '🎮' },
             { id: 2, cat: 'consolas', nombre: 'Xbox Series X', precio: 9899, img: '📦' },
@@ -102,15 +107,17 @@
 
         let carrito = [];
         let tokenActivo = false;
+        let pagoValidadoQR = false;
 
-        // Simulación de Token de Seguridad
+        // --- SEGURIDAD: TOKEN DE SESIÓN ---
         setTimeout(() => {
             tokenActivo = true;
             const status = document.getElementById('token-status');
-            status.innerText = "Token Verificado ✅";
+            status.innerText = "Sesión Segura ✅";
             status.classList.replace('bg-red-600', 'bg-green-600');
         }, 2000);
 
+        // --- LÓGICA DE TIENDA ---
         function filtrar(categoria) {
             const container = document.getElementById('contenedor-productos');
             container.innerHTML = '';
@@ -125,7 +132,7 @@
                         <p class="text-blue-500 font-black text-2xl mt-1">$${p.precio.toLocaleString('es-MX')}</p>
                         <div class="mt-4 flex gap-2">
                             <input type="number" id="qty-${p.id}" value="1" min="1" class="w-14 bg-gray-800 text-white rounded-md text-center border border-gray-700">
-                            <button onclick="agregarAlCarrito(${p.id})" class="flex-1 bg-gray-100 text-gray-900 font-bold py-2 rounded-md hover:bg-blue-500 hover:text-white transition">AGREGAR</button>
+                            <button onclick="agregarAlCarrito(${p.id})" class="flex-1 bg-gray-100 text-gray-900 font-bold py-2 rounded-md hover:bg-blue-500 hover:text-white transition uppercase text-xs">Agregar</button>
                         </div>
                     </div>
                 `;
@@ -152,7 +159,7 @@
                 itemsCont.innerHTML += `
                     <div class="flex items-center gap-4 bg-gray-50 p-3 rounded-lg border">
                         <span class="text-2xl">${item.img}</span>
-                        <div class="flex-1 text-xs">
+                        <div class="flex-1 text-xs text-gray-800">
                             <p class="font-bold">${item.nombre}</p>
                             <p>${item.cantidad} x $${item.precio.toLocaleString('es-MX')}</p>
                         </div>
@@ -171,135 +178,87 @@
         function toggleCarrito() { document.getElementById('carrito-sidebar').classList.toggle('translate-x-full'); }
         function toggleChat() { document.getElementById('chat-box').classList.toggle('visible'); }
 
-        // Lógica con IA para el Chatbot
+        // --- IA DE GEMINI ---
         async function enviarMensaje() {
-    const input = document.getElementById('chat-input');
-    const box = document.getElementById('chat-content');
-    const msg = input.value.trim();
+            const input = document.getElementById('chat-input');
+            const box = document.getElementById('chat-content');
+            const msg = input.value.trim();
+            if (msg === "") return;
 
-    if (msg === "") return; // No enviar si está vacío
+            box.innerHTML += `<p class="text-right text-xs bg-blue-600/20 p-2 rounded-lg ml-8 italic"><strong>Tú:</strong> ${msg}</p>`;
+            input.value = '';
+            box.scrollTop = box.scrollHeight;
 
-    // 1. Mostrar mensaje del usuario
-    box.innerHTML += `<p class="text-right text-xs bg-blue-600/20 p-2 rounded-lg ml-8 italic"><strong>Tú:</strong> ${msg}</p>`;
-    
-    // Limpiar input y scroll
-    input.value = '';
-    box.scrollTop = box.scrollHeight;
+            const typingId = "typing-" + Date.now();
+            box.innerHTML += `<p id="${typingId}" class="bg-blue-900/40 p-3 rounded-xl text-xs border border-blue-800 animate-pulse"><strong>Bot IA:</strong> Escribiendo...</p>`;
+            box.scrollTop = box.scrollHeight;
 
-    // 2. Indicador de carga
-    const typingId = "typing-" + Date.now();
-    box.innerHTML += `<p id="${typingId}" class="bg-blue-900/40 p-3 rounded-xl text-xs border border-blue-800 animate-pulse"><strong>Bot IA:</strong> Escribiendo...</p>`;
-    box.scrollTop = box.scrollHeight;
+            const API_KEY = "AIzaSyC7skNoS535x4JyWSWWu8jFiU9lGPXwetM"; // REEMPLAZA CON TU KEY REAL
 
-    const API_KEY = "AIzaSyC7skNoS535x4JyWSWWu8jFiU9lGPXwetM"; // REEMPLAZA ESTO CON TU CLAVE REAL
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `Eres un experto de GameMaster México. Solo hablas de videojuegos y tecnología. Responde corto. Pregunta: ${msg}` }] }]
+                    })
+                });
+                const data = await response.json();
+                const respuestaIA = data.candidates[0].content.parts[0].text;
+                document.getElementById(typingId).innerHTML = `<strong>Bot IA:</strong> ${respuestaIA}`;
+            } catch (error) {
+                document.getElementById(typingId).innerHTML = `<strong>Bot IA:</strong> Hubo un error de conexión, pero como experto gamer te digo que esa es una gran pregunta.`;
+            }
+            document.getElementById(typingId).classList.remove('animate-pulse');
+            box.scrollTop = box.scrollHeight;
+        }
 
-    try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{ text: `Eres un experto de GameMaster México. Solo hablas de videojuegos y tecnología gamer. Pregunta: ${msg}` }]
-                }]
-            })
-        });
+        // --- API DE PAGO + QR TOKEN ---
+        function generarTokenPago() {
+            const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let token = 'tok_gamemaster_';
+            for (let i = 0; i < 10; i++) token += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+            return token;
+        }
 
-        const data = await response.json();
-        
-        // Si hay un error en la API (Key inválida o límite)
-        if (data.error) throw new Error(data.error.message);
+        function validarQR() {
+            pagoValidadoQR = true;
+            alert("📱 ¡Pago autorizado por el banco! Ya puedes finalizar.");
+            document.getElementById('qr-container').innerHTML = "<p class='text-green-600 font-bold py-4'>✅ BANCO: TRANSACCIÓN AUTORIZADA</p>";
+        }
 
-        const respuestaIA = data.candidates[0].content.parts[0].text;
-        document.getElementById(typingId).innerHTML = `<strong>Bot IA:</strong> ${respuestaIA}`;
+        async function finalizarCompra() {
+            if (!tokenActivo) return alert("❌ Error de Seguridad: Sesión no verificada.");
+            if (carrito.length === 0) return alert("Tu carrito está vacío.");
 
-    } catch (error) {
-        console.error("Error detectado:", error);
-        // Respuesta de emergencia si la API falla
-        document.getElementById(typingId).innerHTML = `<strong>Bot IA:</strong> ¡Hola! Parece que hay mucha interferencia en la red gamer. Pero sobre tu duda de "${msg}", te recomiendo checar nuestras ofertas en consolas. ¿En qué más te ayudo?`;
-    }
+            if (!pagoValidadoQR) {
+                const qrCont = document.getElementById('qr-container');
+                qrCont.classList.remove('hidden');
+                document.getElementById('qrcode').innerHTML = "";
+                new QRCode(document.getElementById("qrcode"), { text: generarTokenPago(), width: 100, height: 100 });
+                alert("🔒 VALIDACIÓN REQUERIDA: Escanea el QR para que tu banco autorice el pago.");
+                return;
+            }
 
-    document.getElementById(typingId).classList.remove('animate-pulse');
-    box.scrollTop = box.scrollHeight;
-}
+            const btn = document.getElementById('btn-finalizar');
+            btn.innerText = "VALIDANDO CON API BANCARIA...";
+            btn.disabled = true;
 
-        // Permitir enviar con la tecla Enter
-        // Este bloque debe ir al final, fuera de cualquier otra función
-document.getElementById('chat-input').addEventListener('keypress', function (e) {
-    if (e.key === 'Enter') {
-        enviarMensaje();
-    }
-});
+            setTimeout(() => {
+                alert(`✅ COMPRA EXITOSA\n\nID de Token: ${generarTokenPago()}\n¡Gracias por comprar en GameMaster!`);
+                pagoValidadoQR = false;
+                document.getElementById('qr-container').classList.add('hidden');
+                document.getElementById('qr-container').innerHTML = `<p class="text-[10px] font-bold text-blue-600 mb-2 uppercase">Escanea para autorizar pago</p><div id="qrcode" class="flex justify-center mb-2"></div><button onclick="validarQR()" class="text-xs bg-green-500 text-white px-4 py-1 rounded-full hover:bg-green-600 animate-bounce">Simular Escaneo ✅</button>`;
+                carrito = [];
+                actualizarCarritoUI();
+                toggleCarrito();
+                btn.innerText = "CONFIRMAR PEDIDO (MXN)";
+                btn.disabled = false;
+            }, 2000);
+        }
 
-        // Generador de Token de Transacción (Simulación de API de Pago)
-function generarTokenPago() {
-    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let token = 'tok_gamemaster_';
-    for (let i = 0; i < 12; i++) {
-        token += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
-    }
-    return token;
-}
-
-let pagoValidadoQR = false; // Estado de seguridad adicional
-
-async function finalizarCompra() {
-    if (!tokenActivo) return alert("❌ Error: Token de Sesión no verificado.");
-    if (carrito.length === 0) return alert("Tu carrito está vacío.");
-
-    // Si el QR no ha sido validado, lo generamos y detenemos el proceso
-    if (!pagoValidadoQR) {
-        const qrDiv = document.getElementById('qr-container');
-        qrDiv.classList.remove('hidden');
-        
-        // Limpiamos QR anterior si existe y generamos uno nuevo con el Token de Pago
-        document.getElementById('qrcode').innerHTML = "";
-        const tempToken = generarTokenPago();
-        new QRCode(document.getElementById("qrcode"), {
-            text: tempToken,
-            width: 128,
-            height: 128
-        });
-        
-        alert("⚠️ VALIDACIÓN REQUERIDA: Escanea el código QR para autorizar la transacción con tu app bancaria.");
-        return;
-    }
-
-    // Si ya está validado, procedemos con el cierre
-    const btn = document.querySelector('button[onclick="finalizarCompra()"]');
-    btn.innerText = "PROCESANDO TRANSACCIÓN...";
-    btn.disabled = true;
-
-    setTimeout(() => {
-        alert(`✅ COMPRA FINALIZADA\n\nEl código QR ha sido validado por el banco.\nTu pedido está en camino.`);
-        pagoValidadoQR = false; // Reset para la siguiente compra
-        document.getElementById('qr-container').classList.add('hidden');
-        carrito = [];
-        actualizarCarritoUI();
-        toggleCarrito();
-        btn.innerText = "CONFIRMAR PEDIDO (MXN)";
-        btn.disabled = false;
-    }, 2000);
-}
-
-// Función que simula la respuesta de la API del banco al escanear
-function validarQR() {
-    pagoValidadoQR = true;
-    alert("📱 ¡Escaneo Exitoso! El banco ha autorizado el movimiento. Ahora puedes confirmar tu pedido.");
-    const qrDiv = document.getElementById('qr-container');
-    qrDiv.innerHTML = "<p class='text-green-600 font-bold py-4'>✅ PAGO AUTORIZADO POR EL BANCO</p>";
-}, 2000);
-}
-
+        document.getElementById('chat-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') enviarMensaje(); });
         window.onload = () => filtrar('consolas');
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
