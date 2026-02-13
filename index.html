@@ -171,48 +171,60 @@
         function toggleChat() { document.getElementById('chat-box').classList.toggle('visible'); }
 
         // Lógica con IA para el Chatbot
-        async function enviarMensaje() {
+        function enviarMensaje() {
             const input = document.getElementById('chat-input');
-            const msg = input.value.trim();
+            const msg = input.value.toLowerCase().trim();
             if (msg === "") return;
 
             const box = document.getElementById('chat-content');
-            box.innerHTML += `<p class="text-right text-xs bg-blue-600/20 p-2 rounded-lg ml-8 italic"><strong>Tú:</strong> ${msg}</p>`;
+            box.innerHTML += `<p class="text-right text-xs bg-blue-600/20 p-2 rounded-lg ml-8 italic"><strong>Tú:</strong> ${input.value}</p>`;
             
-            // Indicador de "escribiendo..."
-            const typingId = "typing-" + Date.now();
-            box.innerHTML += `<p id="${typingId}" class="bg-blue-900/40 p-3 rounded-xl text-xs border border-blue-800 animate-pulse"><strong>Bot:</strong> Pensando...</p>`;
-            box.scrollTop = box.scrollHeight;
+            // Diccionario de IA enfocada en Videojuegos
+            const baseConocimiento = {
+                saludos: ["hola", "buen", "hey", "qué tal"],
+                gaming: ["juego", "consola", "ps5", "xbox", "nintendo", "switch", "pc", "gamer", "mando", "control", "halo", "zelda", "elden", "spider"],
+                tienda: ["precio", "comprar", "costo", "stock", "disponible", "oferta", "envio", "pago", "garantia"]
+            };
 
-            try {
-                // Usamos una API gratuita de procesamiento de lenguaje natural (Hugging Face / Chat-API)
-                // Para este ejemplo, configuramos un "filtro de videojuegos" en el prompt
-                const response = await fetch("https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ inputs: `Eres un experto de GameMaster México. Solo puedes hablar de videojuegos, consolas y accesorios. Si te preguntan algo fuera de este tema, di que solo sabes de gaming. Pregunta: ${msg}` })
-                });
+            let respuesta = "";
 
-                const data = await response.json();
-                const typingElem = document.getElementById(typingId);
-                
-                // Si la IA falla o el tema no es gaming, aplicamos un filtro extra de seguridad
-                let botReply = data[0]?.generated_text || "¡Vaya! Mi conexión neuronal gamer se distrajo. ¿Qué decías sobre videojuegos?";
-                
-                // Refuerzo de personalidad:
-                if (!msg.toLowerCase().match(/(juego|play|xbox|nintendo|consola|precio|envio|compra|gaming|ps5|pc|control|gamer|tienda)/)) {
-                    botReply = "Como asistente de GameMaster, mi especialidad son los videojuegos y hardware. No puedo ayudarte con otros temas, ¡pero pregúntame por consolas!";
+            // --- MOTOR DE IA: FILTRO DE CONTENIDO ---
+            const esTemaGaming = Object.values(baseConocimiento).flat().some(palabra => msg.includes(palabra));
+
+            if (!esTemaGaming) {
+                respuesta = "🤖 <b>Modo Gaming Activo:</b> Lo siento, mi IA está configurada exclusivamente para asistir en temas de videojuegos y nuestra tienda GameMaster. No puedo responder sobre temas ajenos al gaming.";
+            } else {
+                // Lógica de respuesta inteligente según el contexto
+                if (msg.includes("envio") || msg.includes("entreg")) {
+                    respuesta = "🚚 Contamos con logística inteligente vía FedEx. El tiempo de entrega a tu zona es de 2 a 5 días hábiles.";
+                } else if (msg.includes("pago") || msg.includes("comprar")) {
+                    respuesta = "💳 Nuestro sistema procesa pagos vía SPEI, tarjetas de crédito y depósitos en OXXO de forma segura.";
+                } else if (msg.includes("hola") || msg.includes("buen")) {
+                    respuesta = "¡Hola gamer! 🎮 Soy la IA de GameMaster. ¿En qué aventura (o compra) te puedo ayudar hoy?";
+                } else if (msg.includes("ps5") || msg.includes("playstation")) {
+                    respuesta = "La PS5 Slim es nuestra consola más vendida. Tiene tecnología de trazado de rayos y carga ultra rápida.";
+                } else if (msg.includes("xbox")) {
+                    respuesta = "La Xbox Series X es potencia pura. Recuerda que tenemos Game Pass disponible para complementar tu compra.";
+                } else if (msg.includes("garantia")) {
+                    respuesta = "🛡️ Tu inversión está segura. Todos nuestros productos cuentan con garantía oficial por defectos de fábrica.";
+                } else {
+                    respuesta = "¡Excelente pregunta! Como experto en gaming, te recomiendo revisar nuestra sección de ofertas actuales en la pestaña de videojuegos.";
                 }
-
-                typingElem.innerHTML = `<strong>Bot:</strong> ${botReply}`;
-                typingElem.classList.remove('animate-pulse');
-
-            } catch (error) {
-                document.getElementById(typingId).innerHTML = "<strong>Bot:</strong> Lo siento, perdí la conexión con el servidor. ¿Podemos reintentar?";
             }
 
-            input.value = '';
+            // Efecto de pensamiento
+            const tempId = "bot-" + Date.now();
+            box.innerHTML += `<p id="${tempId}" class="bg-blue-900/40 p-3 rounded-xl text-xs border border-blue-800 italic">Bot está procesando...</p>`;
             box.scrollTop = box.scrollHeight;
+
+            setTimeout(() => {
+                const tempMsg = document.getElementById(tempId);
+                tempMsg.innerHTML = `<strong>Bot IA:</strong> ${respuesta}`;
+                tempMsg.classList.remove('italic');
+                box.scrollTop = box.scrollHeight;
+            }, 800);
+
+            input.value = '';
         }
 
         // Permitir enviar con la tecla Enter
@@ -231,4 +243,5 @@
     </script>
 </body>
 </html>
+
 
