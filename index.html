@@ -170,39 +170,49 @@
         function toggleCarrito() { document.getElementById('carrito-sidebar').classList.toggle('translate-x-full'); }
         function toggleChat() { document.getElementById('chat-box').classList.toggle('visible'); }
 
-        // Lógica Avanzada del Chatbot
-        function enviarMensaje() {
+        // Lógica con IA para el Chatbot
+        async function enviarMensaje() {
             const input = document.getElementById('chat-input');
-            const msg = input.value.toLowerCase().trim();
+            const msg = input.value.trim();
             if (msg === "") return;
 
             const box = document.getElementById('chat-content');
-            box.innerHTML += `<p class="text-right text-xs bg-blue-600/20 p-2 rounded-lg ml-8 italic"><strong>Tú:</strong> ${input.value}</p>`;
+            box.innerHTML += `<p class="text-right text-xs bg-blue-600/20 p-2 rounded-lg ml-8 italic"><strong>Tú:</strong> ${msg}</p>`;
             
-            let r = "Lo siento, no entiendo esa pregunta. Prueba con 'pago', 'envio' o 'garantia'.";
-            
-            if (msg.includes("envio") || msg.includes("entreg")) {
-                r = "🚚 <b>Envíos:</b> Entregamos a todo México vía FedEx o DHL. El tiempo estimado es de 2 a 5 días hábiles.";
-            } else if (msg.includes("pago") || msg.includes("tarjeta")) {
-                r = "💳 <b>Pagos:</b> Aceptamos Visa, Mastercard, American Express y transferencias SPEI.";
-            } else if (msg.includes("garantia") || msg.includes("fall")) {
-                r = "🛡️ <b>Garantía:</b> Todas nuestras consolas tienen 1 año de garantía directamente con el fabricante.";
-            } else if (msg.includes("devolu") || msg.includes("regres")) {
-                r = "🔄 <b>Devoluciones:</b> Tienes 30 días para devolver juegos sellados. Si el producto está abierto, solo aplica por falla técnica.";
-            } else if (msg.includes("horario") || msg.includes("abiert")) {
-                r = "⏰ <b>Horarios:</b> Nuestra tienda online opera 24/7. El soporte humano está de Lunes a Viernes de 9am a 6pm.";
-            } else if (msg.includes("hola") || msg.includes("buen")) {
-                r = "¡Hola gamer! 🎮 ¿En qué puedo ayudarte hoy?";
-            } else if (msg.includes("ps5") || msg.includes("playstation")) {
-                r = "¡El PS5 Slim está en oferta! Incluye un control DualSense y un juego digital de regalo.";
+            // Indicador de "escribiendo..."
+            const typingId = "typing-" + Date.now();
+            box.innerHTML += `<p id="${typingId}" class="bg-blue-900/40 p-3 rounded-xl text-xs border border-blue-800 animate-pulse"><strong>Bot:</strong> Pensando...</p>`;
+            box.scrollTop = box.scrollHeight;
+
+            try {
+                // Usamos una API gratuita de procesamiento de lenguaje natural (Hugging Face / Chat-API)
+                // Para este ejemplo, configuramos un "filtro de videojuegos" en el prompt
+                const response = await fetch("https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ inputs: `Eres un experto de GameMaster México. Solo puedes hablar de videojuegos, consolas y accesorios. Si te preguntan algo fuera de este tema, di que solo sabes de gaming. Pregunta: ${msg}` })
+                });
+
+                const data = await response.json();
+                const typingElem = document.getElementById(typingId);
+                
+                // Si la IA falla o el tema no es gaming, aplicamos un filtro extra de seguridad
+                let botReply = data[0]?.generated_text || "¡Vaya! Mi conexión neuronal gamer se distrajo. ¿Qué decías sobre videojuegos?";
+                
+                // Refuerzo de personalidad:
+                if (!msg.toLowerCase().match(/(juego|play|xbox|nintendo|consola|precio|envio|compra|gaming|ps5|pc|control|gamer|tienda)/)) {
+                    botReply = "Como asistente de GameMaster, mi especialidad son los videojuegos y hardware. No puedo ayudarte con otros temas, ¡pero pregúntame por consolas!";
+                }
+
+                typingElem.innerHTML = `<strong>Bot:</strong> ${botReply}`;
+                typingElem.classList.remove('animate-pulse');
+
+            } catch (error) {
+                document.getElementById(typingId).innerHTML = "<strong>Bot:</strong> Lo siento, perdí la conexión con el servidor. ¿Podemos reintentar?";
             }
 
-            setTimeout(() => {
-                box.innerHTML += `<p class="bg-blue-900/40 p-3 rounded-xl text-xs border border-blue-800"><strong>Bot:</strong> ${r}</p>`;
-                box.scrollTop = box.scrollHeight;
-            }, 600);
-
             input.value = '';
+            box.scrollTop = box.scrollHeight;
         }
 
         // Permitir enviar con la tecla Enter
@@ -221,3 +231,4 @@
     </script>
 </body>
 </html>
+
