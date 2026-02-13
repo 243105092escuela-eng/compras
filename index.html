@@ -229,17 +229,41 @@ document.getElementById('chat-input').addEventListener('keypress', function (e) 
     }
 });
 
-        function finalizarCompra() {
-            if (!tokenActivo) return alert("❌ Error de Seguridad: Token no detectado.");
-            if (carrito.length === 0) return alert("Tu carrito está vacío.");
-            alert("✅ ¡Pedido Recibido! Total: " + document.getElementById('total-precio').innerText + "\n\nSe ha generado tu ticket de compra.");
-            carrito = []; actualizarCarritoUI(); toggleCarrito();
-        }
+        // Generador de Token de Transacción (Simulación de API de Pago)
+function generarTokenPago() {
+    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let token = 'tok_gamemaster_';
+    for (let i = 0; i < 12; i++) {
+        token += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+    }
+    return token;
+}
+
+async function finalizarCompra() {
+    if (!tokenActivo) return alert("❌ Error: Token de Sesión no verificado.");
+    if (carrito.length === 0) return alert("Tu carrito está vacío.");
+
+    const btn = document.querySelector('button[onclick="finalizarCompra()"]');
+    btn.innerText = "VALIDANDO PAGO CON API...";
+    btn.disabled = true;
+
+    setTimeout(() => {
+        const payToken = generarTokenPago();
+        alert(`✅ PAGO PROCESADO CON ÉXITO\n\nID Transacción: ${payToken}\nGracias por tu compra en GameMaster MX.`);
+        
+        carrito = [];
+        actualizarCarritoUI();
+        toggleCarrito();
+        btn.innerText = "CONFIRMAR PEDIDO (MXN)";
+        btn.disabled = false;
+    }, 2000);
+}
 
         window.onload = () => filtrar('consolas');
     </script>
 </body>
 </html>
+
 
 
 
