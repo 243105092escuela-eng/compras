@@ -1,0 +1,20 @@
+# ── PHP / Backend (solo para InfinityFree, no para GitHub Pages) ──
+*.php
+PHPMailer-master/
+pagos/
+
+# ── Sistema operativo ─────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Editores ──────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Node (si usas herramientas locales) ───────────────────────────
+node_modules/
+.env
+.env.local

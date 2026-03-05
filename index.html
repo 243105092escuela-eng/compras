@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GameMaster México | Tienda Oficial</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- EmailJS — reemplaza el envío de correos sin necesitar PHP -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <style>
         .chat-window{height:400px;display:none}
         .visible{display:flex}
@@ -28,12 +30,26 @@
         .thumb img{width:56px;height:52px;object-fit:contain}
         .thumb:hover{transform:scale(1.05)}
         .thumb.active{border-color:#3b82f6}
+        /* Loader overlay */
+        #loader{position:fixed;inset:0;background:rgba(3,5,8,.85);z-index:200;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;backdrop-filter:blur(4px)}
+        #loader.show{display:flex}
+        .spinner{width:48px;height:48px;border:4px solid #1e3a5f;border-top-color:#3b82f6;border-radius:50%;animation:spin .8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
         /* Toast */
-        #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1e40af;color:#fff;padding:12px 24px;border-radius:14px;font-weight:700;font-size:14px;box-shadow:0 8px 30px rgba(0,0,0,.4);transition:transform .35s cubic-bezier(.23,1,.32,1),opacity .35s;opacity:0;z-index:9999;pointer-events:none}
+        #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);padding:12px 24px;border-radius:14px;font-weight:700;font-size:14px;box-shadow:0 8px 30px rgba(0,0,0,.4);transition:transform .35s cubic-bezier(.23,1,.32,1),opacity .35s;opacity:0;z-index:9999;pointer-events:none;color:#fff;white-space:nowrap}
         #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+        /* Modal verificación */
+        #modal-verificacion{display:none}
+        #modal-verificacion.show{display:flex}
     </style>
 </head>
 <body class="bg-gray-950 text-white font-sans">
+
+<!-- LOADER -->
+<div id="loader">
+    <div class="spinner"></div>
+    <p class="text-blue-400 font-bold text-sm" id="loader-text">Procesando...</p>
+</div>
 
 <!-- TOAST -->
 <div id="toast"></div>
@@ -70,25 +86,44 @@
         <h2 class="text-2xl font-black italic">MI CARRITO</h2>
         <button onclick="toggleCarrito()" class="text-gray-400 hover:text-red-500 text-2xl">✕</button>
     </div>
-
     <div id="items-carrito" class="space-y-4 overflow-y-auto flex-1 pr-1"></div>
-
-    <!-- Pie del carrito -->
-    <div class="flex-shrink-0 mt-4 pt-4 border-t bg-white">
-        <div class="mb-3">
-            <label class="text-xs font-bold text-gray-500 uppercase">Tu nombre (para el pedido)</label>
-            <input type="text" id="nombre-cliente" placeholder="Ej: Juan Pérez"
+    <div class="flex-shrink-0 mt-4 pt-4 border-t bg-white space-y-3">
+        <div>
+            <label class="text-xs font-bold text-gray-500 uppercase">Tu correo (para el recibo)</label>
+            <input type="email" id="correo-cliente" placeholder="tu@correo.com"
                 class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
         </div>
-        <div class="flex justify-between text-xl font-bold mb-4">
+        <div class="flex justify-between text-xl font-bold">
             <span>Total:</span>
             <span id="total-precio" class="text-blue-600">$0.00 MXN</span>
         </div>
-        <button onclick="finalizarCompra()"
+        <button onclick="iniciarCompra()"
             class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 shadow-lg active:scale-95 transition">
-            📋 GENERAR PEDIDO
+            CONFIRMAR PEDIDO
         </button>
-        <p class="text-[10px] text-gray-400 text-center mt-2">Se abrirá WhatsApp con tu pedido listo para enviar</p>
+        <p class="text-[10px] text-gray-400 text-center">Recibirás un código de verificación en tu correo</p>
+    </div>
+</div>
+
+<!-- MODAL VERIFICACIÓN DE CÓDIGO -->
+<div id="modal-verificacion" class="fixed inset-0 z-[150] items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div class="bg-gray-900 border border-blue-500 rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center">
+        <div class="text-4xl mb-3">📧</div>
+        <h3 class="text-xl font-black text-white mb-1">Código enviado</h3>
+        <p class="text-gray-400 text-sm mb-6">Revisa tu correo e ingresa el código de <span class="text-blue-400 font-bold">6 dígitos</span></p>
+        <input type="text" id="input-codigo" maxlength="6" placeholder="000000"
+            class="w-full bg-gray-800 border-2 border-blue-500 text-white text-center text-3xl font-black tracking-widest rounded-xl py-4 mb-2 focus:outline-none focus:border-blue-300"
+            oninput="this.value=this.value.replace(/\D/g,'')">
+        <p id="codigo-error" class="hidden text-red-400 text-xs font-bold mb-3"></p>
+        <button onclick="verificarYComprar()"
+            class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-xl text-lg active:scale-95 transition mb-3">
+            ✅ Verificar y confirmar
+        </button>
+        <button onclick="reenviarCodigo()" id="btn-reenviar"
+            class="text-xs text-blue-400 hover:text-blue-200 font-bold underline block w-full mb-2">
+            ¿No llegó? Reenviar código
+        </button>
+        <button onclick="cerrarModalVerif()" class="text-xs text-gray-600 hover:text-gray-400">Cancelar</button>
     </div>
 </div>
 
@@ -154,10 +189,23 @@
 
 <script>
 // ================================================================
-// CONFIGURA AQUÍ TU NÚMERO DE WHATSAPP (con código de país, sin +)
-// Ejemplo México: 5215512345678
+// ⚙️  CONFIGURACIÓN — edita estos valores antes de publicar
 // ================================================================
-const WA_NUMERO = '521XXXXXXXXXX';
+const CONFIG = {
+    // Tu número de WhatsApp (código país + número, sin +)
+    // México: '5215512345678'
+    WA_NUMERO: '521XXXXXXXXXX',
+
+    // EmailJS — regístrate gratis en https://www.emailjs.com
+    // Guía en README.md
+    EMAILJS_PUBLIC_KEY:  'TU_PUBLIC_KEY',
+    EMAILJS_SERVICE_ID:  'TU_SERVICE_ID',
+    EMAILJS_TEMPLATE_CODIGO:  'TU_TEMPLATE_CODIGO',
+    EMAILJS_TEMPLATE_RECIBO:  'TU_TEMPLATE_RECIBO',
+
+    // Gemini AI (chatbot)
+    GEMINI_KEY: 'AIzaSyC7skNoS535x4JyWSWWu8jFiU9lGPXwetM',
+};
 
 // ================================================================
 // PRODUCTOS
@@ -199,22 +247,41 @@ function imgTag(src, style='') {
     return `<img src="${s}" alt="producto" style="${style}" loading="lazy" onerror="this.onerror=null;this.src='${FALLBACK}'">`;
 }
 
-// ── Toast ─────────────────────────────────────────────────────────
-function showToast(msg, color='#1e40af') {
-    const t = document.getElementById('toast');
-    t.innerText = msg;
-    t.style.background = color;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2800);
-}
-
 // ── Estado global ─────────────────────────────────────────────────
 let carrito = [];
 let productoModalActual = null;
+let codigoEsperado = '';
+let correoCompra   = '';
 
-// ── 3D TILT ───────────────────────────────────────────────────────
+// Inicializar EmailJS
+(function() {
+    if (CONFIG.EMAILJS_PUBLIC_KEY !== 'TU_PUBLIC_KEY') {
+        emailjs.init({ publicKey: CONFIG.EMAILJS_PUBLIC_KEY });
+    }
+})();
+
+// ── Helpers visuales ──────────────────────────────────────────────
+function showToast(msg, color='#1e40af') {
+    const t = document.getElementById('toast');
+    t.innerText = msg; t.style.background = color;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+function showLoader(txt='Procesando...') {
+    document.getElementById('loader-text').innerText = txt;
+    document.getElementById('loader').classList.add('show');
+}
+function hideLoader() { document.getElementById('loader').classList.remove('show'); }
+
+function generarToken() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return 'tok_gm_' + Array.from({length:10}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+function generarCodigo6() { return String(Math.floor(100000 + Math.random()*900000)); }
+
+// ── 3D Tilt ───────────────────────────────────────────────────────
 function applyTilt(inner, shine, rx, ry) {
-    const rY = rx * 16, rX = -ry * 16;
+    const rY = rx*16, rX = -ry*16;
     inner.style.transform = `rotateY(${rY}deg) rotateX(${rX}deg)`;
     inner.style.boxShadow = `${-rY*1.5}px ${rX*1.5}px 45px rgba(59,130,246,.3),0 10px 40px rgba(0,0,0,.55)`;
     if (shine) shine.style.background = `radial-gradient(circle at ${50+rx*55}% ${50+ry*55}%,rgba(140,205,255,.22) 0%,rgba(59,130,246,.1) 38%,transparent 65%)`;
@@ -235,8 +302,8 @@ function attachTilt(card) {
         raf = requestAnimationFrame(() => {
             const r = card.getBoundingClientRect();
             applyTilt(inner, shine,
-                ((e.clientX - r.left) / r.width  - .5) * 2,
-                ((e.clientY - r.top)  / r.height - .5) * 2
+                ((e.clientX-r.left)/r.width-.5)*2,
+                ((e.clientY-r.top)/r.height-.5)*2
             );
         });
     });
@@ -251,8 +318,8 @@ function attachModalTilt() {
         if (raf) cancelAnimationFrame(raf);
         raf = requestAnimationFrame(() => {
             const r  = fresh.getBoundingClientRect();
-            const rx = ((e.clientX - r.left) / r.width  - .5) * 2;
-            const ry = ((e.clientY - r.top)  / r.height - .5) * 2;
+            const rx = ((e.clientX-r.left)/r.width-.5)*2;
+            const ry = ((e.clientY-r.top)/r.height-.5)*2;
             fresh.style.transform = `rotateY(${rx*20}deg) rotateX(${-ry*20}deg)`;
             const sh = fresh.querySelector('.modal-shine');
             if (sh) sh.style.background = `radial-gradient(circle at ${50+rx*55}% ${50+ry*55}%,rgba(140,210,255,.26) 0%,transparent 62%)`;
@@ -305,11 +372,9 @@ function actualizarCarritoUI() {
     const cc = document.getElementById('cart-count');
     let total = 0, count = 0;
     ic.innerHTML = '';
-
     if (!carrito.length) {
         ic.innerHTML = '<p class="text-gray-400 text-sm text-center mt-8">Tu carrito está vacío 🛒</p>';
     }
-
     carrito.forEach((item, i) => {
         const sub = item.precio * item.cantidad;
         total += sub; count += item.cantidad;
@@ -329,46 +394,125 @@ function actualizarCarritoUI() {
             </div>`;
         ic.appendChild(d);
     });
-
     tp.innerText = `$${total.toLocaleString('es-MX')} MXN`;
     cc.innerText  = count;
 }
-
-function eliminar(i) { carrito.splice(i, 1); actualizarCarritoUI(); }
+function eliminar(i) { carrito.splice(i,1); actualizarCarritoUI(); }
 function toggleCarrito() { document.getElementById('carrito-sidebar').classList.toggle('translate-x-full'); }
 function toggleChat()    { document.getElementById('chat-box').classList.toggle('visible'); }
 
-// ── Finalizar compra → WhatsApp ───────────────────────────────────
-function finalizarCompra() {
-    if (!carrito.length) { showToast('Tu carrito está vacío 🛒', '#dc2626'); return; }
+// ── Flujo de compra con EmailJS ───────────────────────────────────
+async function iniciarCompra() {
+    if (!carrito.length) { showToast('Tu carrito está vacío 🛒','#dc2626'); return; }
+    const correo = document.getElementById('correo-cliente').value.trim();
+    if (!correo || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+        showToast('📧 Ingresa un correo válido','#dc2626'); return;
+    }
 
-    const nombre = document.getElementById('nombre-cliente').value.trim() || 'Cliente';
-    const total  = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
+    // Si EmailJS no está configurado, ir directo a WhatsApp
+    if (CONFIG.EMAILJS_PUBLIC_KEY === 'TU_PUBLIC_KEY') {
+        enviarPedidoWhatsApp(correo);
+        return;
+    }
 
-    let lineas = `🎮 *Pedido GameMaster MX*\n👤 Cliente: ${nombre}\n\n`;
-    carrito.forEach(i => {
-        lineas += `• ${i.nombre} × ${i.cantidad} — $${(i.precio * i.cantidad).toLocaleString('es-MX')} MXN\n`;
-    });
-    lineas += `\n💰 *Total: $${total.toLocaleString('es-MX')} MXN*`;
+    correoCompra   = correo;
+    codigoEsperado = generarCodigo6();
 
-    const url = `https://wa.me/${WA_NUMERO}?text=${encodeURIComponent(lineas)}`;
-    window.open(url, '_blank');
+    showLoader('Enviando código de verificación...');
+    try {
+        await emailjs.send(CONFIG.EMAILJS_SERVICE_ID, CONFIG.EMAILJS_TEMPLATE_CODIGO, {
+            to_email: correo,
+            codigo:   codigoEsperado,
+        });
+        hideLoader();
+        abrirModalVerif();
+    } catch(e) {
+        hideLoader();
+        showToast('❌ No se pudo enviar el código. Revisa la config EmailJS','#dc2626');
+        console.error('EmailJS error:', e);
+    }
 }
 
-// ── Chatbot (Gemini) ──────────────────────────────────────────────
-const GEMINI_KEY = 'AIzaSyC7skNoS535x4JyWSWWu8jFiU9lGPXwetM';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+function abrirModalVerif() {
+    document.getElementById('input-codigo').value = '';
+    document.getElementById('codigo-error').classList.add('hidden');
+    document.getElementById('modal-verificacion').classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+function cerrarModalVerif() {
+    document.getElementById('modal-verificacion').classList.remove('show');
+    document.body.style.overflow = '';
+}
 
+async function reenviarCodigo() {
+    const btn = document.getElementById('btn-reenviar');
+    btn.disabled = true; btn.innerText = 'Enviando...';
+    codigoEsperado = generarCodigo6();
+    try {
+        await emailjs.send(CONFIG.EMAILJS_SERVICE_ID, CONFIG.EMAILJS_TEMPLATE_CODIGO, {
+            to_email: correoCompra,
+            codigo:   codigoEsperado,
+        });
+        showToast('📧 Código reenviado');
+    } catch(e) {
+        showToast('❌ Error al reenviar','#dc2626');
+    }
+    btn.disabled = false; btn.innerText = '¿No llegó? Reenviar código';
+}
+
+async function verificarYComprar() {
+    const ingresado = document.getElementById('input-codigo').value.trim();
+    const errEl = document.getElementById('codigo-error');
+    if (ingresado.length !== 6) { errEl.innerText='Escribe los 6 dígitos.'; errEl.classList.remove('hidden'); return; }
+    if (ingresado !== codigoEsperado) { errEl.innerText='❌ Código incorrecto.'; errEl.classList.remove('hidden'); return; }
+
+    cerrarModalVerif();
+    showLoader('Confirmando pedido...');
+
+    const token  = generarToken();
+    const total  = carrito.reduce((s,i) => s+i.precio*i.cantidad, 0);
+    const lineas = carrito.map(i => `${i.nombre} x${i.cantidad} — $${(i.precio*i.cantidad).toLocaleString('es-MX')} MXN`).join('\n');
+
+    try {
+        await emailjs.send(CONFIG.EMAILJS_SERVICE_ID, CONFIG.EMAILJS_TEMPLATE_RECIBO, {
+            to_email:    correoCompra,
+            token:       token,
+            productos:   lineas,
+            total:       `$${total.toLocaleString('es-MX')} MXN`,
+        });
+        hideLoader();
+        carrito = []; actualizarCarritoUI(); toggleCarrito();
+        document.getElementById('correo-cliente').value = '';
+        showToast(`✅ ¡Pedido confirmado! ID: ${token}`,'#16a34a');
+        alert(`✅ COMPRA EXITOSA\nID de orden: ${token}\nRecibo enviado a: ${correoCompra}\n¡Gracias por comprar en GameMaster!`);
+    } catch(e) {
+        hideLoader();
+        showToast('⚠️ Pedido registrado pero error al enviar recibo','#d97706');
+        console.error('EmailJS recibo error:', e);
+    }
+}
+
+// Fallback: pedido por WhatsApp cuando EmailJS no está configurado
+function enviarPedidoWhatsApp(correo) {
+    const total  = carrito.reduce((s,i) => s+i.precio*i.cantidad, 0);
+    let msg = `🎮 *Pedido GameMaster MX*\n📧 Correo: ${correo}\n\n`;
+    carrito.forEach(i => { msg += `• ${i.nombre} ×${i.cantidad} — $${(i.precio*i.cantidad).toLocaleString('es-MX')} MXN\n`; });
+    msg += `\n💰 *Total: $${total.toLocaleString('es-MX')} MXN*`;
+    window.open(`https://wa.me/${CONFIG.WA_NUMERO}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+// ── Chatbot ───────────────────────────────────────────────────────
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${CONFIG.GEMINI_KEY}`;
 async function enviarMensaje() {
     const inp = document.getElementById('chat-input');
     const box = document.getElementById('chat-content');
     const msg = inp.value.trim(); if (!msg) return;
     box.innerHTML += `<p class="text-right text-xs bg-blue-600/20 p-2 rounded-lg ml-8 italic"><strong>Tú:</strong> ${msg}</p>`;
     inp.value = ''; box.scrollTop = box.scrollHeight;
-    const tid = 't' + Date.now();
+    const tid = 't'+Date.now();
     box.innerHTML += `<p id="${tid}" class="bg-blue-900/40 p-3 rounded-xl text-xs border border-blue-800 animate-pulse"><strong>Bot IA:</strong> Escribiendo...</p>`;
     try {
-        const res  = await fetch(GEMINI_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ contents:[{ parts:[{ text:`Eres experto GameMaster México. Responde breve y en español. Pregunta: ${msg}` }] }] }) });
+        const res  = await fetch(GEMINI_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:`Eres experto GameMaster México. Responde breve y en español. Pregunta: ${msg}`}]}]})});
         const data = await res.json();
         document.getElementById(tid).innerHTML = `<strong>Bot IA:</strong> ${data.candidates[0].content.parts[0].text}`;
     } catch(e) {
@@ -378,68 +522,54 @@ async function enviarMensaje() {
     box.scrollTop = box.scrollHeight;
 }
 
-// ── Modal ─────────────────────────────────────────────────────────
+// ── Modal producto ────────────────────────────────────────────────
 function abrirModal(id) {
     const p = productos.find(x => x.id === id);
     const d = detalles[id];
     productoModalActual = p;
     document.getElementById('modal-nombre').innerText = p.nombre;
-    document.getElementById('modal-precio').innerText = '$' + p.precio.toLocaleString('es-MX') + ' MXN';
+    document.getElementById('modal-precio').innerText = '$'+p.precio.toLocaleString('es-MX')+' MXN';
     document.getElementById('modal-cat').innerText    = p.cat.toUpperCase();
-    document.getElementById('modal-desc').innerText   = d?.desc || '';
+    document.getElementById('modal-desc').innerText   = d?.desc||'';
     document.getElementById('modal-qty').value = 1;
-    const specsEl = document.getElementById('modal-specs');
-    specsEl.innerHTML = '';
-    d?.specs?.forEach(([k, v]) => {
-        specsEl.innerHTML += `<div class="flex justify-between text-sm border-b border-gray-800 pb-1"><span class="text-gray-400">${k}</span><span class="font-bold text-white">${v}</span></div>`;
-    });
-    document.getElementById('modal-img-holder').innerHTML = imgTag(p.img, 'width:220px;height:200px;object-fit:contain');
-    const thumbsCont = document.getElementById('thumbs-container');
-    thumbsCont.innerHTML = '';
-    ['#111827','#0f172a','#1e1b4b'].forEach((bg, i) => {
+    const specsEl = document.getElementById('modal-specs'); specsEl.innerHTML='';
+    d?.specs?.forEach(([k,v]) => { specsEl.innerHTML+=`<div class="flex justify-between text-sm border-b border-gray-800 pb-1"><span class="text-gray-400">${k}</span><span class="font-bold text-white">${v}</span></div>`; });
+    document.getElementById('modal-img-holder').innerHTML = imgTag(p.img,'width:220px;height:200px;object-fit:contain');
+    const thumbsCont = document.getElementById('thumbs-container'); thumbsCont.innerHTML='';
+    ['#111827','#0f172a','#1e1b4b'].forEach((bg,i) => {
         const div = document.createElement('div');
-        div.className = 'thumb flex items-center justify-center' + (i === 0 ? ' active' : '');
-        div.style.background = bg;
-        div.innerHTML = imgTag(p.img);
+        div.className = 'thumb flex items-center justify-center'+(i===0?' active':'');
+        div.style.background = bg; div.innerHTML = imgTag(p.img);
         div.addEventListener('click', e => {
             e.stopPropagation();
-            document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.thumb').forEach(t=>t.classList.remove('active'));
             div.classList.add('active');
-            const el = document.getElementById('modal-tilt-inner') || document.querySelector('.modal-tilt-inner');
-            if (el) el.style.background = bg;
+            const el=document.getElementById('modal-tilt-inner')||document.querySelector('.modal-tilt-inner');
+            if(el) el.style.background=bg;
         });
         thumbsCont.appendChild(div);
     });
-    document.getElementById('modal-producto').style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    requestAnimationFrame(() => attachModalTilt());
+    document.getElementById('modal-producto').style.display='flex';
+    document.body.style.overflow='hidden';
+    requestAnimationFrame(()=>attachModalTilt());
 }
-function cerrarModal() {
-    document.getElementById('modal-producto').style.display = 'none';
-    document.body.style.overflow = '';
-}
-function cambiarCantModal(d) {
-    const i = document.getElementById('modal-qty');
-    i.value = Math.max(1, parseInt(i.value) + d);
-}
+function cerrarModal() { document.getElementById('modal-producto').style.display='none'; document.body.style.overflow=''; }
+function cambiarCantModal(d) { const i=document.getElementById('modal-qty'); i.value=Math.max(1,parseInt(i.value)+d); }
 function agregarDesdeModal() {
     if (!productoModalActual) return;
-    const cant   = parseInt(document.getElementById('modal-qty').value);
-    const existe = carrito.find(i => i.id === productoModalActual.id);
-    if (existe) existe.cantidad += cant; else carrito.push({ ...productoModalActual, cantidad: cant });
+    const cant=parseInt(document.getElementById('modal-qty').value);
+    const existe=carrito.find(i=>i.id===productoModalActual.id);
+    if(existe) existe.cantidad+=cant; else carrito.push({...productoModalActual,cantidad:cant});
     actualizarCarritoUI();
     showToast(`✅ ${productoModalActual.nombre} agregado`);
-    const btn = document.getElementById('btn-agregar-modal');
-    btn.innerHTML = '✅ ¡Agregado!';
-    btn.classList.replace('bg-blue-600','bg-green-600');
-    setTimeout(() => { btn.innerHTML = '🛒 AGREGAR AL CARRITO'; btn.classList.replace('bg-green-600','bg-blue-600'); }, 1500);
+    const btn=document.getElementById('btn-agregar-modal');
+    btn.innerHTML='✅ ¡Agregado!'; btn.classList.replace('bg-blue-600','bg-green-600');
+    setTimeout(()=>{ btn.innerHTML='🛒 AGREGAR AL CARRITO'; btn.classList.replace('bg-green-600','bg-blue-600'); },1500);
 }
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModal(); });
-document.getElementById('modal-producto').addEventListener('click', e => {
-    if (e.target === document.getElementById('modal-producto')) cerrarModal();
-});
-document.getElementById('chat-input').addEventListener('keypress', e => { if (e.key === 'Enter') enviarMensaje(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape'){ cerrarModal(); cerrarModalVerif(); }});
+document.getElementById('modal-producto').addEventListener('click', e => { if(e.target===document.getElementById('modal-producto')) cerrarModal(); });
+document.getElementById('chat-input').addEventListener('keypress', e => { if(e.key==='Enter') enviarMensaje(); });
 window.onload = () => filtrar('consolas');
 </script>
 </body>
