@@ -5,271 +5,442 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GameMaster México | Tienda Oficial</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        .chat-window { height: 400px; display: none; }
-        .visible { display: flex; }
-        .tab-active { border-bottom: 4px solid #3b82f6; color: #3b82f6; }
-        .product-card:hover { transform: translateY(-5px); }
-        #chat-content::-webkit-scrollbar { width: 4px; }
-        #chat-content::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+        .chat-window{height:400px;display:none}
+        .visible{display:flex}
+        .tab-active{border-bottom:4px solid #3b82f6;color:#3b82f6}
+        #chat-content::-webkit-scrollbar{width:4px}
+        #chat-content::-webkit-scrollbar-thumb{background:#3b82f6;border-radius:10px}
+        .product-card{cursor:pointer;perspective:800px}
+        .card-3d-inner{width:100%;border-radius:1rem;background:#111827;border:1px solid #1f2937;padding:1.5rem;transform-style:preserve-3d;transition:transform .07s linear,box-shadow .07s linear;will-change:transform;position:relative;overflow:hidden}
+        .card-shine{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:10;opacity:0;transition:opacity .25s ease}
+        .product-card:hover .card-shine{opacity:1}
+        .card-img-zone{height:176px;display:flex;align-items:center;justify-content:center;background:#1f2937;border-radius:12px;margin-bottom:1rem;overflow:hidden;position:relative;transition:background .3s;transform:translateZ(22px)}
+        .product-card:hover .card-img-zone{background:#263548}
+        .card-img-zone img{pointer-events:none;width:100%;height:100%;object-fit:contain;padding:12px;transform:translateZ(10px);filter:drop-shadow(0 6px 14px rgba(0,0,0,.5));transition:filter .3s ease,transform .3s ease}
+        .product-card:hover .card-img-zone img{filter:drop-shadow(0 14px 30px rgba(59,130,246,.45)) drop-shadow(0 4px 10px rgba(0,0,0,.65));transform:translateZ(10px) scale(1.05)}
+        .card-text-layer{transform:translateZ(12px)}
+        .modal-tilt-wrap{perspective:900px}
+        .modal-tilt-inner{transform-style:preserve-3d;transition:transform .07s linear;will-change:transform;display:flex;align-items:center;justify-content:center;min-height:280px;background:#111827;border-radius:12px;position:relative;overflow:hidden}
+        .modal-tilt-inner img{pointer-events:none;width:100%;height:260px;object-fit:contain;padding:20px;transform:translateZ(30px);filter:drop-shadow(0 14px 36px rgba(59,130,246,.4)) drop-shadow(0 4px 12px rgba(0,0,0,.75));transition:transform .3s ease}
+        .modal-shine{position:absolute;inset:0;border-radius:12px;pointer-events:none;z-index:5}
+        .thumb{cursor:pointer;border:2px solid transparent;border-radius:10px;transition:border-color .2s,transform .2s;padding:6px;background:#1f2937;overflow:hidden}
+        .thumb img{width:56px;height:52px;object-fit:contain}
+        .thumb:hover{transform:scale(1.05)}
+        .thumb.active{border-color:#3b82f6}
+        /* Toast */
+        #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1e40af;color:#fff;padding:12px 24px;border-radius:14px;font-weight:700;font-size:14px;box-shadow:0 8px 30px rgba(0,0,0,.4);transition:transform .35s cubic-bezier(.23,1,.32,1),opacity .35s;opacity:0;z-index:9999;pointer-events:none}
+        #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
     </style>
 </head>
 <body class="bg-gray-950 text-white font-sans">
 
-    <header class="bg-gray-900 sticky top-0 z-50 shadow-2xl">
-        <div class="p-5 flex justify-between items-center max-w-7xl mx-auto">
-            <h1 class="text-3xl font-extrabold tracking-tighter text-blue-500">GAME<span class="text-white">MASTER</span> <span class="text-xs bg-white text-black px-1 rounded">MX</span></h1>
-            <div class="flex items-center gap-6">
-                <span id="token-status" class="hidden md:block text-[10px] bg-red-600 px-2 py-1 rounded-full uppercase font-bold tracking-widest">Verificando Sesión...</span>
-                <button onclick="toggleCarrito()" class="relative bg-blue-600 hover:bg-blue-700 p-2 rounded-lg transition">
-                    <span class="text-xl">🛒</span>
-                    <span id="cart-count" class="absolute -top-2 -right-2 bg-white text-blue-700 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg">0</span>
-                </button>
-            </div>
-        </div>
-        
-        <nav class="flex justify-center gap-8 bg-gray-800 text-sm font-bold uppercase tracking-widest p-3">
-            <button onclick="filtrar('consolas')" id="tab-consolas" class="tab-link tab-active py-2">Consolas</button>
-            <button onclick="filtrar('juegos')" id="tab-juegos" class="tab-link py-2">Videojuegos</button>
-            <button onclick="filtrar('accesorios')" id="tab-accesorios" class="tab-link py-2">Accesorios</button>
-        </nav>
-    </header>
+<!-- TOAST -->
+<div id="toast"></div>
 
-    <main class="max-w-7xl mx-auto p-8">
-        <div id="contenedor-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
-    </main>
-
-    <div id="carrito-sidebar" class="fixed right-0 top-0 h-full w-full md:w-96 bg-white text-gray-900 p-6 shadow-2xl transform translate-x-full transition-transform z-[60]">
-        <div class="flex justify-between items-center mb-6 border-b pb-4">
-            <h2 class="text-2xl font-black italic">MI CARRITO</h2>
-            <button onclick="toggleCarrito()" class="text-gray-400 hover:text-red-500 text-2xl">✕</button>
-        </div>
-        
-        <div id="items-carrito" class="space-y-4 overflow-y-auto h-[45vh] pr-2"></div>
-
-        <div class="absolute bottom-0 left-0 w-full p-6 bg-gray-50 border-t">
-            <div id="qr-container" class="hidden bg-white p-4 rounded-lg mb-4 text-center border-2 border-dashed border-blue-400">
-                <p class="text-[10px] font-bold text-blue-600 mb-2 uppercase">Escanea para autorizar pago</p>
-                <div id="qrcode" class="flex justify-center mb-2"></div>
-                <button onclick="validarQR()" class="text-xs bg-green-500 text-white px-4 py-1 rounded-full hover:bg-green-600 animate-bounce">
-                    Simular Escaneo ✅
-                </button>
-            </div>
-
-            <div class="flex justify-between text-xl font-bold mb-4">
-                <span>Total:</span>
-                <span id="total-precio" class="text-blue-600">$0.00 MXN</span>
-            </div>
-            <button id="btn-finalizar" onclick="finalizarCompra()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 shadow-lg active:scale-95 transition">
-                CONFIRMAR PEDIDO (MXN)
+<!-- HEADER -->
+<header class="bg-gray-900 sticky top-0 z-50 shadow-2xl">
+    <div class="p-5 flex justify-between items-center max-w-7xl mx-auto">
+        <h1 class="text-3xl font-extrabold tracking-tighter text-blue-500">
+            GAME<span class="text-white">MASTER</span>
+            <span class="text-xs bg-white text-black px-1 rounded">MX</span>
+        </h1>
+        <div class="flex items-center gap-4">
+            <button onclick="toggleCarrito()" class="relative bg-blue-600 hover:bg-blue-700 p-2 rounded-lg transition">
+                <span class="text-xl">🛒</span>
+                <span id="cart-count" class="absolute -top-2 -right-2 bg-white text-blue-700 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg">0</span>
             </button>
         </div>
     </div>
+    <nav class="flex justify-center gap-8 bg-gray-800 text-sm font-bold uppercase tracking-widest p-3">
+        <button onclick="filtrar('consolas')"   id="tab-consolas"   class="tab-link tab-active py-2">Consolas</button>
+        <button onclick="filtrar('juegos')"     id="tab-juegos"     class="tab-link py-2">Videojuegos</button>
+        <button onclick="filtrar('accesorios')" id="tab-accesorios" class="tab-link py-2">Accesorios</button>
+    </nav>
+</header>
 
-    <div class="fixed bottom-5 left-5 z-50">
-        <div id="chat-box" class="chat-window flex-col bg-gray-900 border border-blue-500 text-white w-80 rounded-2xl shadow-2xl mb-4 p-4 overflow-hidden">
-            <div class="border-b border-blue-900 pb-2 mb-2 font-bold text-blue-400 flex justify-between items-center">
-                <span>🤖 IA GameMaster Pro</span>
-                <span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Online</span>
-            </div>
-            <div class="flex-1 overflow-y-auto text-sm space-y-3 p-1" id="chat-content">
-                <p class="bg-gray-800 p-3 rounded-xl border-l-4 border-blue-500">
-                    ¡Hola! Soy la IA de GameMaster. Pregúntame lo que quieras sobre consolas o videojuegos.
-                </p>
-            </div>
-            <div class="mt-3 flex gap-2">
-                <input type="text" id="chat-input" placeholder="Escribe tu duda..." class="flex-1 bg-gray-800 border-none p-3 rounded-lg outline-none text-xs focus:ring-1 focus:ring-blue-500 text-white">
-                <button onclick="enviarMensaje()" class="bg-blue-600 px-3 rounded-lg">➜</button>
-            </div>
-        </div>
-        <button onclick="toggleChat()" class="bg-blue-600 p-4 rounded-full shadow-2xl hover:scale-110 transition-transform active:scale-90">
-            <span class="text-2xl">💬</span>
-        </button>
+<!-- CATÁLOGO -->
+<main class="max-w-7xl mx-auto p-8">
+    <div id="contenedor-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+</main>
+
+<!-- SIDEBAR CARRITO -->
+<div id="carrito-sidebar" class="fixed right-0 top-0 h-full w-full md:w-96 bg-white text-gray-900 p-6 shadow-2xl transform translate-x-full transition-transform z-[60] flex flex-col">
+    <div class="flex justify-between items-center mb-4 border-b pb-4 flex-shrink-0">
+        <h2 class="text-2xl font-black italic">MI CARRITO</h2>
+        <button onclick="toggleCarrito()" class="text-gray-400 hover:text-red-500 text-2xl">✕</button>
     </div>
 
-    <script>
-        // --- BASE DE DATOS ---
-        const productos = [
-            { id: 1, cat: 'consolas', nombre: 'PlayStation 5 Slim', precio: 10499, img: '🎮' },
-            { id: 2, cat: 'consolas', nombre: 'Xbox Series X', precio: 9899, img: '📦' },
-            { id: 3, cat: 'consolas', nombre: 'Nintendo Switch OLED', precio: 6299, img: '📺' },
-            { id: 4, cat: 'consolas', nombre: 'Steam Deck 512GB', precio: 11500, img: '📟' },
-            { id: 5, cat: 'juegos', nombre: 'Elden Ring', precio: 1299, img: '💿' },
-            { id: 6, cat: 'juegos', nombre: 'Zelda: Tears of Kingdom', precio: 1399, img: '🏹' },
-            { id: 7, cat: 'juegos', nombre: 'Spider-Man 2', precio: 1299, img: '🕸️' },
-            { id: 8, cat: 'juegos', nombre: 'Halo Infinite', precio: 899, img: '🔫' },
-            { id: 9, cat: 'accesorios', nombre: 'Control DualSense', precio: 1499, img: '🕹️' },
-            { id: 10, cat: 'accesorios', nombre: 'Audífonos Razer V3', precio: 2100, img: '🎧' },
-            { id: 11, cat: 'accesorios', nombre: 'Silla Gamer RGB', precio: 4500, img: '💺' },
-            { id: 12, cat: 'accesorios', nombre: 'Teclado Mecánico', precio: 2600, img: '⌨️' }
-        ];
+    <div id="items-carrito" class="space-y-4 overflow-y-auto flex-1 pr-1"></div>
 
-        let carrito = [];
-        let tokenActivo = false;
-        let pagoValidadoQR = false;
+    <!-- Pie del carrito -->
+    <div class="flex-shrink-0 mt-4 pt-4 border-t bg-white">
+        <div class="mb-3">
+            <label class="text-xs font-bold text-gray-500 uppercase">Tu nombre (para el pedido)</label>
+            <input type="text" id="nombre-cliente" placeholder="Ej: Juan Pérez"
+                class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+        </div>
+        <div class="flex justify-between text-xl font-bold mb-4">
+            <span>Total:</span>
+            <span id="total-precio" class="text-blue-600">$0.00 MXN</span>
+        </div>
+        <button onclick="finalizarCompra()"
+            class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 shadow-lg active:scale-95 transition">
+            📋 GENERAR PEDIDO
+        </button>
+        <p class="text-[10px] text-gray-400 text-center mt-2">Se abrirá WhatsApp con tu pedido listo para enviar</p>
+    </div>
+</div>
 
-        // --- SEGURIDAD: TOKEN DE SESIÓN ---
-        setTimeout(() => {
-            tokenActivo = true;
-            const status = document.getElementById('token-status');
-            status.innerText = "Sesión Segura ✅";
-            status.classList.replace('bg-red-600', 'bg-green-600');
-        }, 2000);
+<!-- CHATBOT -->
+<div class="fixed bottom-5 left-5 z-50">
+    <div id="chat-box" class="chat-window flex-col bg-gray-900 border border-blue-500 text-white w-80 rounded-2xl shadow-2xl mb-4 p-4 overflow-hidden">
+        <div class="border-b border-blue-900 pb-2 mb-2 font-bold text-blue-400 flex justify-between items-center">
+            <span>🤖 IA GameMaster Pro</span>
+            <span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Online</span>
+        </div>
+        <div class="flex-1 overflow-y-auto text-sm space-y-3 p-1" id="chat-content">
+            <p class="bg-gray-800 p-3 rounded-xl border-l-4 border-blue-500">¡Hola! Soy la IA de GameMaster. Pregúntame lo que quieras sobre consolas o videojuegos.</p>
+        </div>
+        <div class="mt-3 flex gap-2">
+            <input type="text" id="chat-input" placeholder="Escribe tu duda..."
+                class="flex-1 bg-gray-800 border-none p-3 rounded-lg outline-none text-xs focus:ring-1 focus:ring-blue-500 text-white">
+            <button onclick="enviarMensaje()" class="bg-blue-600 px-3 rounded-lg">➜</button>
+        </div>
+    </div>
+    <button onclick="toggleChat()" class="bg-blue-600 p-4 rounded-full shadow-2xl hover:scale-110 transition-transform active:scale-90">
+        <span class="text-2xl">💬</span>
+    </button>
+</div>
 
-        // --- LÓGICA DE TIENDA ---
-        function filtrar(categoria) {
-            const container = document.getElementById('contenedor-productos');
-            container.innerHTML = '';
-            document.querySelectorAll('.tab-link').forEach(btn => btn.classList.remove('tab-active'));
-            document.getElementById(`tab-${categoria}`).classList.add('tab-active');
-
-            productos.filter(p => p.cat === categoria).forEach(p => {
-                container.innerHTML += `
-                    <div class="product-card bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-lg transition-all">
-                        <div class="text-6xl mb-4 flex justify-center bg-gray-800 rounded-xl p-6">${p.img}</div>
-                        <h3 class="text-lg font-bold truncate">${p.nombre}</h3>
-                        <p class="text-blue-500 font-black text-2xl mt-1">$${p.precio.toLocaleString('es-MX')}</p>
-                        <div class="mt-4 flex gap-2">
-                            <input type="number" id="qty-${p.id}" value="1" min="1" class="w-14 bg-gray-800 text-white rounded-md text-center border border-gray-700">
-                            <button onclick="agregarAlCarrito(${p.id})" class="flex-1 bg-gray-100 text-gray-900 font-bold py-2 rounded-md hover:bg-blue-500 hover:text-white transition uppercase text-xs">Agregar</button>
-                        </div>
+<!-- MODAL PRODUCTO -->
+<div id="modal-producto" class="fixed inset-0 z-[100] items-center justify-center bg-black/80 backdrop-blur-sm p-4" style="display:none">
+    <div class="bg-gray-900 border border-gray-700 rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto relative">
+        <button onclick="cerrarModal()" class="absolute top-4 right-4 z-10 bg-gray-800 hover:bg-red-600 text-white rounded-full w-9 h-9 flex items-center justify-center text-lg transition">✕</button>
+        <div class="flex flex-col md:flex-row">
+            <div class="md:w-1/2 p-6 flex flex-col gap-4">
+                <div class="modal-tilt-wrap">
+                    <div id="modal-tilt-inner" class="modal-tilt-inner">
+                        <div class="modal-shine" id="modal-shine"></div>
+                        <div id="modal-img-holder"></div>
                     </div>
-                `;
-            });
-        }
-
-        function agregarAlCarrito(id) {
-            const producto = productos.find(p => p.id === id);
-            const cant = parseInt(document.getElementById(`qty-${id}`).value);
-            const existe = carrito.find(item => item.id === id);
-            if (existe) { existe.cantidad += cant; } else { carrito.push({ ...producto, cantidad: cant }); }
-            actualizarCarritoUI();
-        }
-
-        function actualizarCarritoUI() {
-            const itemsCont = document.getElementById('items-carrito');
-            const totalText = document.getElementById('total-precio');
-            const cartCount = document.getElementById('cart-count');
-            let total = 0; let count = 0; itemsCont.innerHTML = '';
-
-            carrito.forEach((item, index) => {
-                const subtotal = item.precio * item.cantidad;
-                total += subtotal; count += item.cantidad;
-                itemsCont.innerHTML += `
-                    <div class="flex items-center gap-4 bg-gray-50 p-3 rounded-lg border">
-                        <span class="text-2xl">${item.img}</span>
-                        <div class="flex-1 text-xs text-gray-800">
-                            <p class="font-bold">${item.nombre}</p>
-                            <p>${item.cantidad} x $${item.precio.toLocaleString('es-MX')}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-black text-blue-600">$${subtotal.toLocaleString('es-MX')}</p>
-                            <button onclick="eliminar(${index})" class="text-[10px] text-red-500 font-bold">Quitar</button>
-                        </div>
+                </div>
+                <div id="thumbs-container" class="flex gap-3 justify-center flex-wrap mt-2"></div>
+            </div>
+            <div class="md:w-1/2 p-6 flex flex-col justify-between border-t md:border-t-0 md:border-l border-gray-700">
+                <div>
+                    <span id="modal-cat" class="text-xs font-bold uppercase tracking-widest text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full"></span>
+                    <h2 id="modal-nombre" class="text-2xl font-black mt-3 mb-2"></h2>
+                    <p id="modal-precio" class="text-3xl font-black text-blue-500 mb-4"></p>
+                    <p id="modal-desc" class="text-gray-400 text-sm leading-relaxed"></p>
+                    <div id="modal-specs" class="mt-4 space-y-2"></div>
+                </div>
+                <div class="mt-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <button onclick="cambiarCantModal(-1)" class="bg-gray-800 hover:bg-gray-700 text-white w-9 h-9 rounded-lg text-xl font-bold flex items-center justify-center">−</button>
+                        <input type="number" id="modal-qty" value="1" min="1"
+                            class="w-16 bg-gray-800 text-white text-center rounded-lg border border-gray-600 py-2 text-lg font-bold">
+                        <button onclick="cambiarCantModal(1)" class="bg-gray-800 hover:bg-gray-700 text-white w-9 h-9 rounded-lg text-xl font-bold flex items-center justify-center">+</button>
                     </div>
-                `;
-            });
-            totalText.innerText = `$${total.toLocaleString('es-MX')} MXN`;
-            cartCount.innerText = count;
-        }
+                    <button id="btn-agregar-modal" onclick="agregarDesdeModal()"
+                        class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black text-lg shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
+                        🛒 AGREGAR AL CARRITO
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-        function eliminar(idx) { carrito.splice(idx, 1); actualizarCarritoUI(); }
-        function toggleCarrito() { document.getElementById('carrito-sidebar').classList.toggle('translate-x-full'); }
-        function toggleChat() { document.getElementById('chat-box').classList.toggle('visible'); }
+<script>
+// ================================================================
+// CONFIGURA AQUÍ TU NÚMERO DE WHATSAPP (con código de país, sin +)
+// Ejemplo México: 5215512345678
+// ================================================================
+const WA_NUMERO = '521XXXXXXXXXX';
 
-        // --- IA DE GEMINI ---
-        async function enviarMensaje() {
-    const input = document.getElementById('chat-input');
-    const box = document.getElementById('chat-content');
-    const msg = input.value.trim();
+// ================================================================
+// PRODUCTOS
+// ================================================================
+const productos = [
+    { id:1,  cat:'consolas',   nombre:'PlayStation 5 Slim',      precio:10499, img:'img/ps5.png'       },
+    { id:2,  cat:'consolas',   nombre:'Xbox Series X',           precio:9899,  img:'img/xbox.png'      },
+    { id:3,  cat:'consolas',   nombre:'Nintendo Switch OLED',    precio:6299,  img:'img/switch.png'    },
+    { id:4,  cat:'consolas',   nombre:'Steam Deck 512GB',        precio:11500, img:'img/steamdeck.png' },
+    { id:5,  cat:'juegos',     nombre:'Elden Ring',              precio:1299,  img:'img/elden.png'     },
+    { id:6,  cat:'juegos',     nombre:'Zelda: Tears of Kingdom', precio:1399,  img:'img/zelda.png'     },
+    { id:7,  cat:'juegos',     nombre:'Spider-Man 2',            precio:1299,  img:'img/spiderman.png' },
+    { id:8,  cat:'juegos',     nombre:'Halo Infinite',           precio:899,   img:''                  },
+    { id:9,  cat:'accesorios', nombre:'Control DualSense',       precio:1499,  img:'img/dualsense.png' },
+    { id:10, cat:'accesorios', nombre:'Audífonos Razer V3',      precio:2100,  img:'img/razer.png'     },
+    { id:11, cat:'accesorios', nombre:'Silla Gamer RGB',         precio:4500,  img:'img/silla.png'     },
+    { id:12, cat:'accesorios', nombre:'Teclado Mecánico',        precio:2600,  img:'img/teclado.png'   }
+];
 
-    if (msg === "") return;
+const detalles = {
+    1:  { desc:"La PS5 Slim combina potencia next-gen con diseño compacto. Procesador AMD Zen 2, SSD ultrarrápido y hasta 120fps en 4K.", specs:[["Almacenamiento","1TB SSD"],["Resolución","4K / 120fps"],["Ray Tracing","✅ Incluido"],["Color","Blanco / Negro"]] },
+    2:  { desc:"Xbox Series X: el rendimiento más potente de la generación. Miles de títulos con Game Pass incluido.", specs:[["Almacenamiento","1TB SSD"],["Resolución","4K / 120fps"],["Retrocompatible","✅ Sí"],["Color","Negro Carbón"]] },
+    3:  { desc:"Nintendo Switch OLED eleva la portabilidad con pantalla vibrante de 7 pulgadas y altavoces mejorados.", specs:[["Pantalla","OLED 7 pulgadas"],["Batería","4.5 – 9 horas"],["Modos","TV / Mesa / Portátil"],["Almacenamiento","64GB"]] },
+    4:  { desc:"Steam Deck 512GB lleva toda tu biblioteca PC al bolsillo. Pantalla IPS antireflejos y hasta 8 horas de batería.", specs:[["Almacenamiento","512GB NVMe"],["Pantalla",'7" IPS antireflejos'],["Procesador","AMD APU Zen 2"],["Sistema","SteamOS / Windows"]] },
+    5:  { desc:"Elden Ring es la obra maestra de FromSoftware. Mundo abierto épico diseñado con George R.R. Martin. GOTY 2022.", specs:[["Género","RPG / Acción"],["Plataforma","PS5 / Xbox / PC"],["Jugadores","1 (online opcional)"],["Clasificación","M (Mature)"]] },
+    6:  { desc:"Zelda: Tears of the Kingdom expande Hyrule hacia los cielos. La aventura más ambiciosa de Nintendo.", specs:[["Género","Aventura / RPG"],["Plataforma","Nintendo Switch"],["Jugadores","1"],["Año","2023"]] },
+    7:  { desc:"Spider-Man 2 lleva a Peter Parker y Miles Morales a una nueva aventura con el simbionte Venom.", specs:[["Género","Acción / Aventura"],["Plataforma","PS5 Exclusivo"],["Jugadores","1"],["Resolución","4K / 60fps"]] },
+    8:  { desc:"Halo Infinite: el Master Chief regresa en campaña mundo abierto y multijugador gratuito.", specs:[["Género","FPS / Shooter"],["Plataforma","Xbox / PC"],["Multijugador","Free to Play"],["Año","2021"]] },
+    9:  { desc:"DualSense redefine el gamepad con gatillos adaptativos y retroalimentación háptica.", specs:[["Conectividad","USB-C / Bluetooth"],["Batería","~12 horas"],["Touchpad","Capacitivo"],["Compatible","PS5 / PC"]] },
+    10: { desc:"Razer BlackShark V3: audio THX 7.1 espacial, micrófono retráctil y drivers de titanio 50mm.", specs:[["Audio","THX Spatial 7.1"],["Drivers","50mm Titanio"],["Conexión","USB / 3.5mm"],["Peso","320g"]] },
+    11: { desc:"Silla gamer RGB de espuma de alta densidad, reposacabezas ajustable y tiras LED sincronizables.", specs:[["Material","Cuero PU"],["Reclinación","90° – 180°"],["Peso máx","150kg"],["RGB","Tiras sincronizables"]] },
+    12: { desc:"Teclado mecánico switches Blue, iluminación RGB por tecla, cuerpo aluminio y respuesta de 1ms.", specs:[["Switches","Blue Mecánicos"],["Retroiluminación","RGB por tecla"],["Anti-ghosting","N-Key Rollover"],["Conexión","USB-A desmontable"]] }
+};
 
-    box.innerHTML += `<p class="text-right text-xs bg-blue-600/20 p-2 rounded-lg ml-8 italic"><strong>Tú:</strong> ${msg}</p>`;
-    input.value = '';
-    box.scrollTop = box.scrollHeight;
+const FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='12' fill='%231f2937'/%3E%3Ctext x='60' y='52' text-anchor='middle' font-size='36' fill='%234b5563'%3E%F0%9F%8E%AE%3C/text%3E%3Ctext x='60' y='74' text-anchor='middle' font-size='10' fill='%236b7280' font-family='sans-serif'%3ESin imagen%3C/text%3E%3C/svg%3E";
 
-    const typingId = "typing-" + Date.now();
-    box.innerHTML += `<p id="${typingId}" class="bg-blue-900/40 p-3 rounded-xl text-xs border border-blue-800 animate-pulse"><strong>Bot IA:</strong> Escribiendo...</p>`;
-    
-    // --- AQUÍ ESTÁ LA CLAVE DEL ERROR 404 ---
-    const API_KEY = "AIzaSyC7skNoS535x4JyWSWWu8jFiU9lGPXwetM"; 
-    const URL_IA = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+function imgTag(src, style='') {
+    const s = src || FALLBACK;
+    return `<img src="${s}" alt="producto" style="${style}" loading="lazy" onerror="this.onerror=null;this.src='${FALLBACK}'">`;
+}
 
-    try {
-        const response = await fetch(URL_IA, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: `Eres un experto de GameMaster México. Responde dudas de videojuegos y tecnología. Pregunta: ${msg}` }] }]
-            })
+// ── Toast ─────────────────────────────────────────────────────────
+function showToast(msg, color='#1e40af') {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.style.background = color;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Estado global ─────────────────────────────────────────────────
+let carrito = [];
+let productoModalActual = null;
+
+// ── 3D TILT ───────────────────────────────────────────────────────
+function applyTilt(inner, shine, rx, ry) {
+    const rY = rx * 16, rX = -ry * 16;
+    inner.style.transform = `rotateY(${rY}deg) rotateX(${rX}deg)`;
+    inner.style.boxShadow = `${-rY*1.5}px ${rX*1.5}px 45px rgba(59,130,246,.3),0 10px 40px rgba(0,0,0,.55)`;
+    if (shine) shine.style.background = `radial-gradient(circle at ${50+rx*55}% ${50+ry*55}%,rgba(140,205,255,.22) 0%,rgba(59,130,246,.1) 38%,transparent 65%)`;
+}
+function resetTilt(inner, shine) {
+    inner.style.transition = 'transform .5s cubic-bezier(.23,1,.32,1),box-shadow .5s ease';
+    inner.style.transform  = 'rotateY(0deg) rotateX(0deg)';
+    inner.style.boxShadow  = '0 4px 24px rgba(0,0,0,.45)';
+    if (shine) shine.style.background = 'none';
+    setTimeout(() => { inner.style.transition = ''; }, 520);
+}
+function attachTilt(card) {
+    const inner = card.querySelector('.card-3d-inner');
+    const shine = card.querySelector('.card-shine');
+    let raf = null;
+    card.addEventListener('mousemove', e => {
+        if (raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+            const r = card.getBoundingClientRect();
+            applyTilt(inner, shine,
+                ((e.clientX - r.left) / r.width  - .5) * 2,
+                ((e.clientY - r.top)  / r.height - .5) * 2
+            );
         });
+    });
+    card.addEventListener('mouseleave', () => { if (raf) cancelAnimationFrame(raf); resetTilt(inner, shine); });
+}
+function attachModalTilt() {
+    const wrap  = document.getElementById('modal-tilt-inner');
+    const fresh = wrap.cloneNode(true);
+    wrap.parentNode.replaceChild(fresh, wrap);
+    let raf = null;
+    fresh.addEventListener('mousemove', e => {
+        if (raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+            const r  = fresh.getBoundingClientRect();
+            const rx = ((e.clientX - r.left) / r.width  - .5) * 2;
+            const ry = ((e.clientY - r.top)  / r.height - .5) * 2;
+            fresh.style.transform = `rotateY(${rx*20}deg) rotateX(${-ry*20}deg)`;
+            const sh = fresh.querySelector('.modal-shine');
+            if (sh) sh.style.background = `radial-gradient(circle at ${50+rx*55}% ${50+ry*55}%,rgba(140,210,255,.26) 0%,transparent 62%)`;
+        });
+    });
+    fresh.addEventListener('mouseleave', () => {
+        if (raf) cancelAnimationFrame(raf);
+        fresh.style.transition = 'transform .5s cubic-bezier(.23,1,.32,1)';
+        fresh.style.transform  = 'rotateY(0deg) rotateX(0deg)';
+        const sh = fresh.querySelector('.modal-shine');
+        if (sh) sh.style.background = 'none';
+        setTimeout(() => { fresh.style.transition = ''; }, 520);
+    });
+}
 
-        // Si la respuesta no es correcta (como el 404), lanzamos el error al catch
-        if (!response.ok) throw new Error("Error en la URL o API Key");
+// ── Catálogo ──────────────────────────────────────────────────────
+function filtrar(categoria) {
+    const container = document.getElementById('contenedor-productos');
+    container.innerHTML = '';
+    document.querySelectorAll('.tab-link').forEach(b => b.classList.remove('tab-active'));
+    document.getElementById(`tab-${categoria}`).classList.add('tab-active');
+    productos.filter(p => p.cat === categoria).forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.innerHTML = `
+            <div class="card-3d-inner">
+                <div class="card-shine"></div>
+                <div class="card-img-zone">${imgTag(p.img)}</div>
+                <div class="card-text-layer">
+                    <h3 class="text-lg font-bold truncate">${p.nombre}</h3>
+                    <p class="text-blue-500 font-black text-2xl mt-1">$${p.precio.toLocaleString('es-MX')}</p>
+                    <div class="mt-4">
+                        <button class="open-btn w-full bg-gray-800 hover:bg-blue-600 text-white font-bold py-2 rounded-md transition uppercase text-xs tracking-widest">
+                            Ver detalle →
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        attachTilt(card);
+        card.querySelector('.open-btn').addEventListener('click', e => { e.stopPropagation(); abrirModal(p.id); });
+        card.addEventListener('click', () => abrirModal(p.id));
+        container.appendChild(card);
+    });
+}
 
-        const data = await response.json();
-        const respuestaIA = data.candidates[0].content.parts[0].text;
-        document.getElementById(typingId).innerHTML = `<strong>Bot IA:</strong> ${respuestaIA}`;
+// ── Carrito ───────────────────────────────────────────────────────
+function actualizarCarritoUI() {
+    const ic = document.getElementById('items-carrito');
+    const tp = document.getElementById('total-precio');
+    const cc = document.getElementById('cart-count');
+    let total = 0, count = 0;
+    ic.innerHTML = '';
 
-    } catch (error) {
-        console.error("Detalle del error:", error);
-        document.getElementById(typingId).innerHTML = `<strong>Bot IA:</strong> [Modo Offline] No pude conectar con la API de Google (Error 404/403). Revisa la URL y tu API KEY en el código.`;
+    if (!carrito.length) {
+        ic.innerHTML = '<p class="text-gray-400 text-sm text-center mt-8">Tu carrito está vacío 🛒</p>';
     }
 
-    document.getElementById(typingId).classList.remove('animate-pulse');
+    carrito.forEach((item, i) => {
+        const sub = item.precio * item.cantidad;
+        total += sub; count += item.cantidad;
+        const d = document.createElement('div');
+        d.className = 'flex items-center gap-3 bg-gray-50 p-3 rounded-lg border';
+        d.innerHTML = `
+            <div class="w-12 h-12 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                ${imgTag(item.img,'width:44px;height:44px;object-fit:contain')}
+            </div>
+            <div class="flex-1 text-xs text-gray-800">
+                <p class="font-bold">${item.nombre}</p>
+                <p>${item.cantidad} × $${item.precio.toLocaleString('es-MX')}</p>
+            </div>
+            <div class="text-right">
+                <p class="font-black text-blue-600 text-sm">$${sub.toLocaleString('es-MX')}</p>
+                <button onclick="eliminar(${i})" class="text-[10px] text-red-500 font-bold hover:text-red-700">Quitar</button>
+            </div>`;
+        ic.appendChild(d);
+    });
+
+    tp.innerText = `$${total.toLocaleString('es-MX')} MXN`;
+    cc.innerText  = count;
+}
+
+function eliminar(i) { carrito.splice(i, 1); actualizarCarritoUI(); }
+function toggleCarrito() { document.getElementById('carrito-sidebar').classList.toggle('translate-x-full'); }
+function toggleChat()    { document.getElementById('chat-box').classList.toggle('visible'); }
+
+// ── Finalizar compra → WhatsApp ───────────────────────────────────
+function finalizarCompra() {
+    if (!carrito.length) { showToast('Tu carrito está vacío 🛒', '#dc2626'); return; }
+
+    const nombre = document.getElementById('nombre-cliente').value.trim() || 'Cliente';
+    const total  = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
+
+    let lineas = `🎮 *Pedido GameMaster MX*\n👤 Cliente: ${nombre}\n\n`;
+    carrito.forEach(i => {
+        lineas += `• ${i.nombre} × ${i.cantidad} — $${(i.precio * i.cantidad).toLocaleString('es-MX')} MXN\n`;
+    });
+    lineas += `\n💰 *Total: $${total.toLocaleString('es-MX')} MXN*`;
+
+    const url = `https://wa.me/${WA_NUMERO}?text=${encodeURIComponent(lineas)}`;
+    window.open(url, '_blank');
+}
+
+// ── Chatbot (Gemini) ──────────────────────────────────────────────
+const GEMINI_KEY = 'AIzaSyC7skNoS535x4JyWSWWu8jFiU9lGPXwetM';
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+
+async function enviarMensaje() {
+    const inp = document.getElementById('chat-input');
+    const box = document.getElementById('chat-content');
+    const msg = inp.value.trim(); if (!msg) return;
+    box.innerHTML += `<p class="text-right text-xs bg-blue-600/20 p-2 rounded-lg ml-8 italic"><strong>Tú:</strong> ${msg}</p>`;
+    inp.value = ''; box.scrollTop = box.scrollHeight;
+    const tid = 't' + Date.now();
+    box.innerHTML += `<p id="${tid}" class="bg-blue-900/40 p-3 rounded-xl text-xs border border-blue-800 animate-pulse"><strong>Bot IA:</strong> Escribiendo...</p>`;
+    try {
+        const res  = await fetch(GEMINI_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ contents:[{ parts:[{ text:`Eres experto GameMaster México. Responde breve y en español. Pregunta: ${msg}` }] }] }) });
+        const data = await res.json();
+        document.getElementById(tid).innerHTML = `<strong>Bot IA:</strong> ${data.candidates[0].content.parts[0].text}`;
+    } catch(e) {
+        document.getElementById(tid).innerHTML = `<strong>Bot IA:</strong> ❌ No pude conectar.`;
+    }
+    document.getElementById(tid).classList.remove('animate-pulse');
     box.scrollTop = box.scrollHeight;
 }
 
-        // --- API DE PAGO + QR TOKEN ---
-        function generarTokenPago() {
-            const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let token = 'tok_gamemaster_';
-            for (let i = 0; i < 10; i++) token += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
-            return token;
-        }
+// ── Modal ─────────────────────────────────────────────────────────
+function abrirModal(id) {
+    const p = productos.find(x => x.id === id);
+    const d = detalles[id];
+    productoModalActual = p;
+    document.getElementById('modal-nombre').innerText = p.nombre;
+    document.getElementById('modal-precio').innerText = '$' + p.precio.toLocaleString('es-MX') + ' MXN';
+    document.getElementById('modal-cat').innerText    = p.cat.toUpperCase();
+    document.getElementById('modal-desc').innerText   = d?.desc || '';
+    document.getElementById('modal-qty').value = 1;
+    const specsEl = document.getElementById('modal-specs');
+    specsEl.innerHTML = '';
+    d?.specs?.forEach(([k, v]) => {
+        specsEl.innerHTML += `<div class="flex justify-between text-sm border-b border-gray-800 pb-1"><span class="text-gray-400">${k}</span><span class="font-bold text-white">${v}</span></div>`;
+    });
+    document.getElementById('modal-img-holder').innerHTML = imgTag(p.img, 'width:220px;height:200px;object-fit:contain');
+    const thumbsCont = document.getElementById('thumbs-container');
+    thumbsCont.innerHTML = '';
+    ['#111827','#0f172a','#1e1b4b'].forEach((bg, i) => {
+        const div = document.createElement('div');
+        div.className = 'thumb flex items-center justify-center' + (i === 0 ? ' active' : '');
+        div.style.background = bg;
+        div.innerHTML = imgTag(p.img);
+        div.addEventListener('click', e => {
+            e.stopPropagation();
+            document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+            div.classList.add('active');
+            const el = document.getElementById('modal-tilt-inner') || document.querySelector('.modal-tilt-inner');
+            if (el) el.style.background = bg;
+        });
+        thumbsCont.appendChild(div);
+    });
+    document.getElementById('modal-producto').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => attachModalTilt());
+}
+function cerrarModal() {
+    document.getElementById('modal-producto').style.display = 'none';
+    document.body.style.overflow = '';
+}
+function cambiarCantModal(d) {
+    const i = document.getElementById('modal-qty');
+    i.value = Math.max(1, parseInt(i.value) + d);
+}
+function agregarDesdeModal() {
+    if (!productoModalActual) return;
+    const cant   = parseInt(document.getElementById('modal-qty').value);
+    const existe = carrito.find(i => i.id === productoModalActual.id);
+    if (existe) existe.cantidad += cant; else carrito.push({ ...productoModalActual, cantidad: cant });
+    actualizarCarritoUI();
+    showToast(`✅ ${productoModalActual.nombre} agregado`);
+    const btn = document.getElementById('btn-agregar-modal');
+    btn.innerHTML = '✅ ¡Agregado!';
+    btn.classList.replace('bg-blue-600','bg-green-600');
+    setTimeout(() => { btn.innerHTML = '🛒 AGREGAR AL CARRITO'; btn.classList.replace('bg-green-600','bg-blue-600'); }, 1500);
+}
 
-        function validarQR() {
-            pagoValidadoQR = true;
-            alert("📱 ¡Pago autorizado por el banco! Ya puedes finalizar.");
-            document.getElementById('qr-container').innerHTML = "<p class='text-green-600 font-bold py-4'>✅ BANCO: TRANSACCIÓN AUTORIZADA</p>";
-        }
-
-        async function finalizarCompra() {
-            if (!tokenActivo) return alert("❌ Error de Seguridad: Sesión no verificada.");
-            if (carrito.length === 0) return alert("Tu carrito está vacío.");
-
-            if (!pagoValidadoQR) {
-                const qrCont = document.getElementById('qr-container');
-                qrCont.classList.remove('hidden');
-                document.getElementById('qrcode').innerHTML = "";
-                new QRCode(document.getElementById("qrcode"), { text: generarTokenPago(), width: 100, height: 100 });
-                alert("🔒 VALIDACIÓN REQUERIDA: Escanea el QR para que tu banco autorice el pago.");
-                return;
-            }
-
-            const btn = document.getElementById('btn-finalizar');
-            btn.innerText = "VALIDANDO CON API BANCARIA...";
-            btn.disabled = true;
-
-            setTimeout(() => {
-                alert(`✅ COMPRA EXITOSA\n\nID de Token: ${generarTokenPago()}\n¡Gracias por comprar en GameMaster!`);
-                pagoValidadoQR = false;
-                document.getElementById('qr-container').classList.add('hidden');
-                document.getElementById('qr-container').innerHTML = `<p class="text-[10px] font-bold text-blue-600 mb-2 uppercase">Escanea para autorizar pago</p><div id="qrcode" class="flex justify-center mb-2"></div><button onclick="validarQR()" class="text-xs bg-green-500 text-white px-4 py-1 rounded-full hover:bg-green-600 animate-bounce">Simular Escaneo ✅</button>`;
-                carrito = [];
-                actualizarCarritoUI();
-                toggleCarrito();
-                btn.innerText = "CONFIRMAR PEDIDO (MXN)";
-                btn.disabled = false;
-            }, 2000);
-        }
-
-        document.getElementById('chat-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') enviarMensaje(); });
-        window.onload = () => filtrar('consolas');
-    </script>
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModal(); });
+document.getElementById('modal-producto').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-producto')) cerrarModal();
+});
+document.getElementById('chat-input').addEventListener('keypress', e => { if (e.key === 'Enter') enviarMensaje(); });
+window.onload = () => filtrar('consolas');
+</script>
 </body>
 </html>
-
-
